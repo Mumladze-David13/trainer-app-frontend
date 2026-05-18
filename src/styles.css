@@ -1,0 +1,44 @@
+/* src/styles.css */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: #fafafa;
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
+
+/* Mat card default */
+mat-card { border-radius: 12px !important; }
+
+/* Sidenav fix */
+.mat-drawer-content { overflow: auto; }
+
+/* Responsive table */
+@media (max-width: 600px) {
+  .mat-mdc-table { font-size: 13px; }
+  .mat-mdc-cell, .mat-mdc-header-cell { padding: 8px 6px !important; }
+}
+
+/* Expansion panel */
+.mat-expansion-panel {
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Snackbar */
+.mat-mdc-snack-bar-container { border-radius: 8px !important; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.35); }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
