@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: trainer-frontend
     ports:
-      - "80:80"
+      - "8080:80"    # ← замените 8080 на нужный вам порт
     restart: always
     networks:
       - trainer-network
