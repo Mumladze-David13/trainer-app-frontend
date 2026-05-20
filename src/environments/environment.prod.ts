@@ -1,5 +1,4 @@
-// src/environments/environment.prod.ts
 export const environment = {
   production: true,
-  apiUrl: '/api',
+  apiUrl: 'http://144.31.189.154:3000/api',
 };
