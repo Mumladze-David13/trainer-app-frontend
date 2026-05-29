@@ -93,10 +93,10 @@ export class ClientDetailComponent implements OnInit {
   public createSeason(): void {
     if (this.seasonForm.invalid) { this.seasonForm.markAllAsTouched(); return; }
     this.savingSeason.set(true);
-    const v = this.seasonForm.value;
+    const formValue = this.seasonForm.value;
     this._seasonApi.createSeason(this.clientId(), {
-      startDate: (v.startDate as Date).toISOString(),
-      endDate: v.endDate ? (v.endDate as Date).toISOString() : undefined,
+      startDate: (formValue.startDate as Date).toISOString(),
+      endDate: formValue.endDate ? (formValue.endDate as Date).toISOString() : undefined,
     }).pipe(
       tap(() => {
         this._snack.open('Сезон создан', 'OK', { duration: 2500 });

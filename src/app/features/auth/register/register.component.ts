@@ -66,13 +66,13 @@ export class RegisterComponent {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
     this.error.set('');
-    const v = this.form.value;
+    const formValue = this.form.value;
     this._auth.register({
-      email: v.email!,
-      password: v.password!,
-      firstName: v.firstName!,
-      lastName: v.lastName!,
-      role: v.role as Role,
+      email: formValue.email!,
+      password: formValue.password!,
+      firstName: formValue.firstName!,
+      lastName: formValue.lastName!,
+      role: formValue.role as Role,
     }).pipe(
       catchError((err: any) => {
         this.error.set(err.error?.message || 'Ошибка регистрации');
