@@ -11,6 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { WorkoutApiService } from '../../../core/services/api.service';
 import { Workout, WorkoutExercise } from '../../../core/models/index';
 
@@ -53,16 +55,19 @@ export class ClientWorkoutComponent implements OnInit {
 
   public ngOnInit(): void {
     const id: string = this._route.snapshot.paramMap.get('workoutId')!;
-    this._workoutApi.getWorkout(id).subscribe({
-      next: (w: Workout) => {
+    this._workoutApi.getWorkout(id).pipe(
+      tap((w: Workout) => {
         this.workout.set(w);
         // Initialize done state from saved data
         const done: Set<string> = new Set(w.workoutExercises.filter((e: WorkoutExercise) => e.isDone).map((e: WorkoutExercise) => e.id));
         this.doneIds.set(done);
         this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+      }),
+      catchError(() => {
+        this.loading.set(false);
+        return EMPTY;
+      }),
+    ).subscribe();
   }
 
   public isDone(id: string): boolean { return this.doneIds().has(id); }
@@ -76,32 +81,34 @@ export class ClientWorkoutComponent implements OnInit {
   public saveAndClose(): void {
     this.saving.set(true);
     const ids: string[] = Array.from(this.doneIds());
-    this._workoutApi.saveProgress(this.workout()!.id, ids).subscribe({
-      next: () => {
+    this._workoutApi.saveProgress(this.workout()!.id, ids).pipe(
+      tap(() => {
         this._snack.open('Прогресс сохранён', 'OK', { duration: 2000 });
         this._router.navigate(['/client/seasons']);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
-      },
-    });
+        return EMPTY;
+      }),
+    ).subscribe();
   }
 
   public completeWorkout(): void {
     if (this.donePercent() < 50) return;
     this.saving.set(true);
     const ids: string[] = Array.from(this.doneIds());
-    this._workoutApi.completeWorkout(this.workout()!.id, ids).subscribe({
-      next: (w: Workout) => {
+    this._workoutApi.completeWorkout(this.workout()!.id, ids).pipe(
+      tap((w: Workout) => {
         this.workout.set(w);
         this._snack.open('🎉 Занятие выполнено!', 'OK', { duration: 3000 });
         this.saving.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
-      },
-    });
+        return EMPTY;
+      }),
+    ).subscribe();
   }
 }

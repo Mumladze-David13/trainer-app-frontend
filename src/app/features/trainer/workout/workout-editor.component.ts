@@ -14,6 +14,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { WorkoutApiService, ExerciseApiService } from '../../../core/services/api.service';
 import { Exercise, Workout, WorkoutExercise } from '../../../core/models/index';
 
@@ -85,9 +87,14 @@ export class WorkoutEditorComponent implements OnInit {
       this.workoutId.set(wId);
     }
 
-    this._exerciseApi.getAll().subscribe({
-      next: (exs: Exercise[]) => { this.exercises.set(exs); this._loadWorkout(); },
-    });
+    this._exerciseApi.getAll()
+      .pipe(
+        tap((exs: Exercise[]) => {
+          this.exercises.set(exs);
+          this._loadWorkout();
+        })
+      )
+      .subscribe();
   }
 
   private _loadWorkout(): void {
@@ -96,23 +103,28 @@ export class WorkoutEditorComponent implements OnInit {
       this.addRow();
       return;
     }
-    this._workoutApi.getWorkout(this.workoutId()).subscribe({
-      next: (w: Workout) => {
-        this.workout.set(w);
-        this.workoutForm.patchValue({ notes: w.notes || '' });
-        w.workoutExercises.forEach((we: WorkoutExercise) => {
-          this.exercisesArray.push(this._fb.group({
-            exerciseId: [we.exerciseId, Validators.required],
-            weight: [we.weight || null],
-            sets: [we.sets, [Validators.required, Validators.min(1)]],
-            reps: [we.reps, [Validators.required, Validators.min(1)]],
-          }));
-        });
-        this._updateRows();
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this._workoutApi.getWorkout(this.workoutId())
+      .pipe(
+        tap((w: Workout) => {
+          this.workout.set(w);
+          this.workoutForm.patchValue({ notes: w.notes || '' });
+          w.workoutExercises.forEach((we: WorkoutExercise) => {
+            this.exercisesArray.push(this._fb.group({
+              exerciseId: [we.exerciseId, Validators.required],
+              weight: [we.weight || null],
+              sets: [we.sets, [Validators.required, Validators.min(1)]],
+              reps: [we.reps, [Validators.required, Validators.min(1)]],
+            }));
+          });
+          this._updateRows();
+          this.loading.set(false);
+        }),
+        catchError(() => {
+          this.loading.set(false);
+          return EMPTY;
+        })
+      )
+      .subscribe();
   }
 
   public addRow(): void {
@@ -153,30 +165,36 @@ export class WorkoutEditorComponent implements OnInit {
         seasonId: this.seasonId(),
         notes: this.workoutForm.value.notes || undefined,
         exercises,
-      }).subscribe({
-        next: () => {
-          this._snack.open('Занятие создано', 'OK', { duration: 2500 });
-          this._router.navigate(['/trainer/clients', this.clientId()]);
-        },
-        error: (err: any) => {
-          this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
-          this.saving.set(false);
-        },
-      });
+      })
+        .pipe(
+          tap(() => {
+            this._snack.open('Занятие создано', 'OK', { duration: 2500 });
+            this._router.navigate(['/trainer/clients', this.clientId()]);
+          }),
+          catchError((err: any) => {
+            this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
+            this.saving.set(false);
+            return EMPTY;
+          })
+        )
+        .subscribe();
     } else {
       this._workoutApi.updateWorkout(this.workoutId(), {
         notes: this.workoutForm.value.notes || undefined,
         exercises,
-      }).subscribe({
-        next: () => {
-          this._snack.open('Занятие обновлено', 'OK', { duration: 2500 });
-          this._router.navigate(['/trainer/clients', this.clientId()]);
-        },
-        error: (err: any) => {
-          this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
-          this.saving.set(false);
-        },
-      });
+      })
+        .pipe(
+          tap(() => {
+            this._snack.open('Занятие обновлено', 'OK', { duration: 2500 });
+            this._router.navigate(['/trainer/clients', this.clientId()]);
+          }),
+          catchError((err: any) => {
+            this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
+            this.saving.set(false);
+            return EMPTY;
+          })
+        )
+        .subscribe();
     }
   }
 }

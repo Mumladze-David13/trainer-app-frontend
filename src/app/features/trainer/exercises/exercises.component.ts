@@ -12,6 +12,8 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { ExerciseApiService } from '../../../core/services/api.service';
 import { Exercise } from '../../../core/models/index';
 
@@ -54,10 +56,16 @@ export class ExercisesComponent implements OnInit {
 
   private _load(): void {
     this.loading.set(true);
-    this._api.getAll().subscribe({
-      next: (data: Exercise[]) => { this.exercises.set(data); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
+    this._api.getAll().pipe(
+      tap((data: Exercise[]) => {
+        this.exercises.set(data);
+        this.loading.set(false);
+      }),
+      catchError(() => {
+        this.loading.set(false);
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   public openForm(): void {
@@ -85,28 +93,32 @@ export class ExercisesComponent implements OnInit {
     const data: { name: string; description?: string } = { name: this.form.value.name!, description: this.form.value.description || undefined };
     const id: string | null = this.editingId();
     const req = id ? this._api.update(id, data) : this._api.create(data);
-    req.subscribe({
-      next: () => {
+    req.pipe(
+      tap(() => {
         this._snack.open(id ? 'Упражнение обновлено' : 'Упражнение добавлено', 'OK', { duration: 2500 });
         this.cancelForm();
         this._load();
         this.saving.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
-      },
-    });
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   public deleteExercise(ex: Exercise): void {
     if (!confirm(`Удалить упражнение "${ex.name}"?`)) return;
-    this._api.delete(ex.id).subscribe({
-      next: () => {
+    this._api.delete(ex.id).pipe(
+      tap(() => {
         this._snack.open('Удалено', 'OK', { duration: 2000 });
         this._load();
-      },
-      error: (err: any) => this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 }),
-    });
+      }),
+      catchError((err: any) => {
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        return EMPTY;
+      })
+    ).subscribe();
   }
 }

@@ -10,6 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { catchError } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -42,11 +44,14 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     const { email, password } = this.form.value;
-    this._auth.login(email!, password!).subscribe({
-      error: (err: any) => {
-        this.error.set(err.error?.message || 'Неверный email или пароль');
-        this.loading.set(false);
-      },
-    });
+    this._auth.login(email!, password!)
+      .pipe(
+        catchError((err: any) => {
+          this.error.set(err.error?.message || 'Неверный email или пароль');
+          this.loading.set(false);
+          return EMPTY;
+        })
+      )
+      .subscribe();
   }
 }

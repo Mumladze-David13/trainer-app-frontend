@@ -9,6 +9,8 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { WorkoutApiService, SettingsApiService, UserApiService, ClientSettings } from '../../../core/services/api.service';
 import { Season, Workout } from '../../../core/models/index';
 
@@ -35,24 +37,33 @@ export class ClientSeasonsComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
-    this._settingsApi.getClientSettings().subscribe({
-      next: (s: ClientSettings) => {
+    this._settingsApi.getClientSettings().pipe(
+      tap((s: ClientSettings) => {
         this.trainerId.set(s.trainerId);
         if (s.trainerId) {
           this._loadSeasons(s.trainerId);
         } else {
           this.loading.set(false);
         }
-      },
-      error: () => this.loading.set(false),
-    });
+      }),
+      catchError(() => {
+        this.loading.set(false);
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   private _loadSeasons(trainerId: string): void {
-    this._workoutApi.getClientSeasons(trainerId).subscribe({
-      next: (data: Season[]) => { this.seasons.set(data); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
+    this._workoutApi.getClientSeasons(trainerId).pipe(
+      tap((data: Season[]) => {
+        this.seasons.set(data);
+        this.loading.set(false);
+      }),
+      catchError(() => {
+        this.loading.set(false);
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   public completedCount(season: Season): number {

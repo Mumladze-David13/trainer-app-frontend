@@ -14,6 +14,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { ClientApiService, UserApiService, ClientListItem } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/index';
@@ -59,13 +61,13 @@ export class ClientsListComponent implements OnInit {
 
   private _load(): void {
     this.loading.set(true);
-    this._clientApi.getMyClients().subscribe({
-      next: (data: ClientListItem[]) => { this.clients.set(data); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
+    this._clientApi.getMyClients().pipe(
+      tap((data: ClientListItem[]) => { this.clients.set(data); this.loading.set(false); }),
+      catchError(() => { this.loading.set(false); return EMPTY; })
+    ).subscribe();
     // Fetch all users (not just trainers) - use trainers endpoint as base, add self
-    this._userApi.getTrainers().subscribe({
-      next: (trainers: User[]) => {
+    this._userApi.getTrainers().pipe(
+      tap((trainers: User[]) => {
         // In a real app we'd have a users/all endpoint. For now show all registered users
         // The trainer can add any user as client including themselves
         this.allUsers.set(trainers);
@@ -74,26 +76,27 @@ export class ClientsListComponent implements OnInit {
         if (me && !trainers.find((t: User) => t.id === me.id)) {
           this.allUsers.update((u: User[]) => [me, ...u]);
         }
-      }
-    });
+      })
+    ).subscribe();
   }
 
   public addClient(): void {
     const clientId: string | null = this.selectedUser.value;
     if (!clientId) return;
     this.adding.set(true);
-    this._clientApi.addClient(clientId).subscribe({
-      next: () => {
+    this._clientApi.addClient(clientId).pipe(
+      tap(() => {
         this._snack.open('Клиент добавлен', 'OK', { duration: 2500 });
         this.showAddForm.set(false);
         this.selectedUser.reset();
         this._load();
         this.adding.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.adding.set(false);
-      },
-    });
+        return EMPTY;
+      })
+    ).subscribe();
   }
 }

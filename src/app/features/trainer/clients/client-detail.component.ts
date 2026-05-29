@@ -16,6 +16,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { ClientApiService, SeasonApiService, WorkoutApiService } from '../../../core/services/api.service';
 import { Season, Workout, User } from '../../../core/models/index';
 
@@ -70,15 +72,18 @@ export class ClientDetailComponent implements OnInit {
 
   private _load(clientId: string): void {
     this.loading.set(true);
-    this._clientApi.getClientDetail(clientId).subscribe({
-      next: (data) => {
+    this._clientApi.getClientDetail(clientId).pipe(
+      tap((data) => {
         this.client.set(data.client);
         this.seasons.set(data.seasons);
         this.sessionsPerSeason.set(data.sessionsPerSeason);
         this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+      }),
+      catchError(() => {
+        this.loading.set(false);
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   public workoutCountClass(season: Season): string {
@@ -92,17 +97,18 @@ export class ClientDetailComponent implements OnInit {
     this._seasonApi.createSeason(this.clientId(), {
       startDate: (v.startDate as Date).toISOString(),
       endDate: v.endDate ? (v.endDate as Date).toISOString() : undefined,
-    }).subscribe({
-      next: () => {
+    }).pipe(
+      tap(() => {
         this._snack.open('Сезон создан', 'OK', { duration: 2500 });
         this.showSeasonForm.set(false);
         this._load(this.clientId());
         this.savingSeason.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingSeason.set(false);
-      },
-    });
+        return EMPTY;
+      })
+    ).subscribe();
   }
 }

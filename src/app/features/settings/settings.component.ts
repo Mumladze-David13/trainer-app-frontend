@@ -12,6 +12,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSliderModule } from '@angular/material/slider';
+import { EMPTY } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { SettingsApiService, UserApiService, ClientSettings } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { User, TrainerSettings } from '../../core/models/index';
@@ -68,18 +70,21 @@ export class SettingsComponent implements OnInit {
 
   public ngOnInit(): void {
     if (this.auth.isTrainer()) {
-      this._settingsApi.getTrainerSettings().subscribe({
-        next: (s: TrainerSettings) => {
+      this._settingsApi.getTrainerSettings().pipe(
+        tap((s: TrainerSettings) => {
           this.trainerForm.patchValue({ sessionsPerSeason: s.sessionsPerSeason });
           this.loadingTrainer.set(false);
-        },
-        error: () => this.loadingTrainer.set(false),
-      });
+        }),
+        catchError(() => {
+          this.loadingTrainer.set(false);
+          return EMPTY;
+        }),
+      ).subscribe();
     }
 
     if (this.auth.isClient()) {
-      this._userApi.getTrainers().subscribe({
-        next: (ts: User[]) => {
+      this._userApi.getTrainers().pipe(
+        tap((ts: User[]) => {
           // Include self for TRAINER_CLIENT
           const me: User | null = this.auth.currentUser();
           const list: User[] = [...ts];
@@ -87,44 +92,49 @@ export class SettingsComponent implements OnInit {
             list.unshift(me);
           }
           this.trainers.set(list);
-        },
-      });
-      this._settingsApi.getClientSettings().subscribe({
-        next: (s: ClientSettings) => {
+        }),
+      ).subscribe();
+      this._settingsApi.getClientSettings().pipe(
+        tap((s: ClientSettings) => {
           this.clientForm.patchValue({ trainerId: s.trainerId });
           this.loadingClient.set(false);
-        },
-        error: () => this.loadingClient.set(false),
-      });
+        }),
+        catchError(() => {
+          this.loadingClient.set(false);
+          return EMPTY;
+        }),
+      ).subscribe();
     }
   }
 
   public saveTrainerSettings(): void {
     if (this.trainerForm.invalid) return;
     this.savingTrainer.set(true);
-    this._settingsApi.updateTrainerSettings(this.trainerForm.value.sessionsPerSeason!).subscribe({
-      next: () => {
+    this._settingsApi.updateTrainerSettings(this.trainerForm.value.sessionsPerSeason!).pipe(
+      tap(() => {
         this._snack.open('Настройки сохранены', 'OK', { duration: 2500 });
         this.savingTrainer.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingTrainer.set(false);
-      },
-    });
+        return EMPTY;
+      }),
+    ).subscribe();
   }
 
   public saveClientSettings(): void {
     this.savingClient.set(true);
-    this._settingsApi.setClientTrainer(this.clientForm.value.trainerId || null).subscribe({
-      next: () => {
+    this._settingsApi.setClientTrainer(this.clientForm.value.trainerId || null).pipe(
+      tap(() => {
         this._snack.open('Тренер сохранён', 'OK', { duration: 2500 });
         this.savingClient.set(false);
-      },
-      error: (err: any) => {
+      }),
+      catchError((err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingClient.set(false);
-      },
-    });
+        return EMPTY;
+      }),
+    ).subscribe();
   }
 }

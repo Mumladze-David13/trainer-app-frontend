@@ -11,6 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { Role } from '../../../core/models/index';
 
@@ -71,11 +73,12 @@ export class RegisterComponent {
       firstName: v.firstName!,
       lastName: v.lastName!,
       role: v.role as Role,
-    }).subscribe({
-      error: (err: any) => {
+    }).pipe(
+      catchError((err: any) => {
         this.error.set(err.error?.message || 'Ошибка регистрации');
         this.loading.set(false);
-      },
-    });
+        return EMPTY;
+      })
+    ).subscribe();
   }
 }
