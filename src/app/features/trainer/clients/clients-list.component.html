@@ -1,0 +1,75 @@
+<div class="page-header">
+  <h2>Клиенты</h2>
+  <button mat-raised-button color="primary" (click)="showAddForm.set(!showAddForm())">
+    <mat-icon>person_add</mat-icon> Добавить клиента
+  </button>
+</div>
+
+@if (showAddForm()) {
+  <mat-card class="add-form-card">
+    <mat-card-content>
+      <h3>Добавить клиента</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Выберите пользователя</mat-label>
+        <mat-select [formControl]="selectedUser">
+          @for (u of allUsers(); track u.id) {
+            <mat-option [value]="u.id">
+              {{ u.firstName }} {{ u.lastName }} ({{ u.email }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (isSelf()) {
+        <div class="info-note">
+          <mat-icon>info</mat-icon>
+          Вы можете добавить себя как клиента (тренер сам себе)
+        </div>
+      }
+      <div class="form-actions">
+        <button mat-button (click)="showAddForm.set(false)">Отмена</button>
+        <button mat-raised-button color="primary"
+                [disabled]="!selectedUser.value || adding()"
+                (click)="addClient()">
+          {{ adding() ? 'Добавляю...' : 'Добавить' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (loading()) {
+  <div class="center"><mat-spinner /></div>
+} @else if (clients().length === 0) {
+  <div class="empty-state">
+    <mat-icon>group</mat-icon>
+    <p>Нет клиентов. Добавьте первого!</p>
+  </div>
+} @else {
+  <div class="clients-grid">
+    @for (item of clients(); track item.client.id) {
+      <mat-card class="client-card" [routerLink]="['/trainer/clients', item.client.id]">
+        <mat-card-content>
+          <div class="client-avatar">
+            {{ item.client.firstName[0] }}{{ item.client.lastName[0] }}
+          </div>
+          <div class="client-info">
+            <div class="client-name">
+              {{ item.client.firstName }} {{ item.client.lastName }}
+              @if (item.client.id === currentUserId()) {
+                <span class="self-badge">Я</span>
+              }
+            </div>
+            <div class="client-email">{{ item.client.email }}</div>
+            @if (item.lastSeason) {
+              <div class="client-season">
+                <mat-icon>event_note</mat-icon>
+                {{ item.lastSeason.name }}
+              </div>
+            }
+          </div>
+          <mat-icon class="arrow-icon">chevron_right</mat-icon>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

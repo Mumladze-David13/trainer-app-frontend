@@ -1,0 +1,35 @@
+h2 { margin: 0 0 16px; }
+.settings-card { margin-bottom: 16px; }
+mat-card-content { padding: 16px !important; }
+.info-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 8px 0; font-size: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.info-row:last-child { border-bottom: none; }
+.label { min-width: 80px; color: rgba(0,0,0,0.5); font-size: 13px; }
+.role-badge {
+  padding: 3px 12px; border-radius: 12px;
+  font-size: 13px; font-weight: 500;
+}
+.role-trainer { background: #e3f2fd; color: #1565c0; }
+.role-client { background: #e8f5e9; color: #1b5e20; }
+.role-trainer_client { background: #fff3e0; color: #e65100; }
+.full-width { width: 100%; }
+.slider-section { margin-bottom: 16px; }
+.slider-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 15px; margin-bottom: 4px;
+}
+.slider-hint { font-size: 13px; color: rgba(0,0,0,0.5); margin-bottom: 12px; }
+.sessions-input { max-width: 200px; }
+.card-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.current-trainer {
+  display: flex; align-items: center; gap: 6px;
+  color: #388e3c; font-size: 14px;
+  background: #e8f5e9; padding: 8px 12px;
+  border-radius: 6px; margin-bottom: 12px;
+}
+.trainer-email { font-size: 12px; color: rgba(0,0,0,0.4); margin-left: 4px; }
+.mode-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.mode-hint { font-size: 13px; color: rgba(0,0,0,0.5); margin: 0; }

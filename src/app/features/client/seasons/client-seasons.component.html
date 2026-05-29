@@ -1,0 +1,81 @@
+<h2>Мои занятия</h2>
+
+@if (loading()) {
+  <div class="center"><mat-spinner /></div>
+} @else if (!trainerId()) {
+  <mat-card class="no-trainer">
+    <mat-card-content>
+      <mat-icon>person_search</mat-icon>
+      <h3>Тренер не выбран</h3>
+      <p>Перейдите в настройки, чтобы выбрать своего тренера</p>
+      <button mat-raised-button color="primary" routerLink="/settings">
+        <mat-icon>settings</mat-icon> Перейти в настройки
+      </button>
+    </mat-card-content>
+  </mat-card>
+} @else if (seasons().length === 0) {
+  <mat-card class="no-trainer">
+    <mat-card-content>
+      <mat-icon>event_note</mat-icon>
+      <h3>Нет занятий</h3>
+      <p>Ваш тренер ещё не добавил занятия</p>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-accordion multi="false">
+    @for (season of seasons(); track season.id; let i = $index) {
+      <mat-expansion-panel [expanded]="i === 0">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>event_note</mat-icon>
+            {{ season.name }}
+          </mat-panel-title>
+          <mat-panel-description>
+            {{ season.startDate | date:'dd.MM.yyyy' }}
+            &nbsp;·&nbsp;
+            {{ completedCount(season) }}/{{ season.workouts.length }} выполнено
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="season-content">
+          @if (season.workouts.length === 0) {
+            <p class="empty">Занятий нет</p>
+          } @else {
+            <div class="workout-list">
+              @for (w of season.workouts; track w.id; let last = $last) {
+                <div class="workout-row"
+                     [class.last-workout]="i === 0 && last"
+                     [routerLink]="['/client/workout', w.id]">
+                  <div class="workout-left">
+                    <div class="workout-date">
+                      <mat-icon>today</mat-icon>
+                      {{ w.date | date:'EEEE, dd.MM.yyyy' }}
+                    </div>
+                    <div class="workout-stats">
+                      {{ w.workoutExercises.length }} упр.
+                      @if (w.isCompleted) {
+                        · <span class="done-text">Выполнено</span>
+                      } @else {
+                        @if (donePercent(w) > 0) {
+                          · {{ donePercent(w) }}% выполнено
+                        }
+                      }
+                    </div>
+                  </div>
+                  <div class="workout-right">
+                    @if (w.isCompleted) {
+                      <mat-icon class="completed-icon">check_circle</mat-icon>
+                    } @else {
+                      <mat-chip class="open-chip">Открыть</mat-chip>
+                    }
+                    <mat-icon class="arrow">chevron_right</mat-icon>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+}
