@@ -1,7 +1,7 @@
 // src/app/features/auth/register/register.component.ts
-import { Component, signal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -40,7 +40,13 @@ export class RegisterComponent {
     { value: 'TRAINER_CLIENT', label: 'Тренер-клиент', description: 'Оба режима', icon: 'swap_horiz' },
   ];
 
-  public form = this._fb.group({
+  public form: FormGroup<{
+    firstName: FormControl<string | null>;
+    lastName: FormControl<string | null>;
+    email: FormControl<string | null>;
+    password: FormControl<string | null>;
+    role: FormControl<string | null>;
+  }> = this._fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
@@ -48,13 +54,13 @@ export class RegisterComponent {
     role: ['', Validators.required],
   });
 
-  public loading = signal(false);
-  public error = signal('');
-  public showPass = signal(false);
+  public loading: WritableSignal<boolean> = signal(false);
+  public error: WritableSignal<string> = signal('');
+  public showPass: WritableSignal<boolean> = signal(false);
 
   constructor(private _fb: FormBuilder, private _auth: AuthService) {}
 
-  public onSubmit() {
+  public onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
     this.error.set('');
@@ -66,7 +72,7 @@ export class RegisterComponent {
       lastName: v.lastName!,
       role: v.role as Role,
     }).subscribe({
-      error: (err) => {
+      error: (err: any) => {
         this.error.set(err.error?.message || 'Ошибка регистрации');
         this.loading.set(false);
       },

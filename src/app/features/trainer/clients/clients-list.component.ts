@@ -1,5 +1,5 @@
 // src/app/features/trainer/clients/clients-list.component.ts
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -14,7 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
-import { ClientApiService, UserApiService } from '../../../core/services/api.service';
+import { ClientApiService, UserApiService, ClientListItem } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/index';
 
@@ -32,15 +32,15 @@ import { User } from '../../../core/models/index';
   styleUrls: ['./clients-list.component.css'],
 })
 export class ClientsListComponent implements OnInit {
-  public clients = signal<any[]>([]);
-  public allUsers = signal<User[]>([]);
-  public loading = signal(true);
-  public adding = signal(false);
-  public showAddForm = signal(false);
-  public selectedUser = new FormControl<string>('');
-  public currentUserId = signal<string>('');
+  public clients: WritableSignal<ClientListItem[]> = signal<ClientListItem[]>([]);
+  public allUsers: WritableSignal<User[]> = signal<User[]>([]);
+  public loading: WritableSignal<boolean> = signal(true);
+  public adding: WritableSignal<boolean> = signal(false);
+  public showAddForm: WritableSignal<boolean> = signal(false);
+  public selectedUser: FormControl<string | null> = new FormControl<string>('');
+  public currentUserId: WritableSignal<string> = signal<string>('');
 
-  public isSelf = () => this.selectedUser.value === this.currentUserId();
+  public isSelf = (): boolean => this.selectedUser.value === this.currentUserId();
 
   constructor(
     private _clientApi: ClientApiService,
@@ -49,7 +49,7 @@ export class ClientsListComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() {
+  public ngOnInit(): void {
     this.currentUserId.set(this._auth.currentUser()?.id || '');
     this._load();
     this._userApi.getTrainers().subscribe(); // preload
@@ -57,29 +57,29 @@ export class ClientsListComponent implements OnInit {
     this._userApi.getMe().subscribe();
   }
 
-  private _load() {
+  private _load(): void {
     this.loading.set(true);
     this._clientApi.getMyClients().subscribe({
-      next: (data) => { this.clients.set(data); this.loading.set(false); },
+      next: (data: ClientListItem[]) => { this.clients.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
     // Fetch all users (not just trainers) - use trainers endpoint as base, add self
     this._userApi.getTrainers().subscribe({
-      next: (trainers) => {
+      next: (trainers: User[]) => {
         // In a real app we'd have a users/all endpoint. For now show all registered users
         // The trainer can add any user as client including themselves
         this.allUsers.set(trainers);
         // Add current user (themselves) if TRAINER_CLIENT
-        const me = this._auth.currentUser();
-        if (me && !trainers.find(t => t.id === me.id)) {
-          this.allUsers.update(u => [me as any, ...u]);
+        const me: User | null = this._auth.currentUser();
+        if (me && !trainers.find((t: User) => t.id === me.id)) {
+          this.allUsers.update((u: User[]) => [me, ...u]);
         }
       }
     });
   }
 
-  public addClient() {
-    const clientId = this.selectedUser.value;
+  public addClient(): void {
+    const clientId: string | null = this.selectedUser.value;
     if (!clientId) return;
     this.adding.set(true);
     this._clientApi.addClient(clientId).subscribe({
@@ -90,7 +90,7 @@ export class ClientsListComponent implements OnInit {
         this._load();
         this.adding.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.adding.set(false);
       },

@@ -1,8 +1,8 @@
 // src/app/features/trainer/workout/workout-editor.component.ts
-import { Component, signal, OnInit, computed } from '@angular/core';
+import { Component, signal, OnInit, computed, WritableSignal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormArray, Validators, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormArray, Validators, FormGroup, FormControl, AbstractControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +15,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { WorkoutApiService, ExerciseApiService } from '../../../core/services/api.service';
-import { Exercise, Workout } from '../../../core/models/index';
+import { Exercise, Workout, WorkoutExercise } from '../../../core/models/index';
+
+interface ExerciseRow {
+  index: number;
+}
 
 @Component({
   selector: 'app-workout-editor',
@@ -29,29 +33,33 @@ import { Exercise, Workout } from '../../../core/models/index';
   templateUrl: './workout-editor.component.html',
   styleUrls: ['./workout-editor.component.css'],
 })
+
 export class WorkoutEditorComponent implements OnInit {
-  public columns = ['order', 'exercise', 'weight', 'sets', 'reps', 'actions'];
+  public columns: string[] = ['order', 'exercise', 'weight', 'sets', 'reps', 'actions'];
 
-  public loading = signal(true);
-  public saving = signal(false);
-  public exercises = signal<Exercise[]>([]);
-  public workout = signal<Workout | null>(null);
-  public isNew = signal(true);
-  public clientId = signal('');
-  public seasonId = signal('');
-  public workoutId = signal('');
+  public loading: WritableSignal<boolean> = signal(true);
+  public saving: WritableSignal<boolean> = signal(false);
+  public exercises: WritableSignal<Exercise[]> = signal<Exercise[]>([]);
+  public workout: WritableSignal<Workout | null> = signal<Workout | null>(null);
+  public isNew: WritableSignal<boolean> = signal(true);
+  public clientId: WritableSignal<string> = signal('');
+  public seasonId: WritableSignal<string> = signal('');
+  public workoutId: WritableSignal<string> = signal('');
 
-  public exerciseRows: any[] = [];
+  public exerciseRows: ExerciseRow[] = [];
 
-  public workoutForm = this._fb.group({
+  public workoutForm: FormGroup<{
+    notes: FormControl<string | null>;
+    exercises: FormArray;
+  }> = this._fb.group({
     notes: [''],
     exercises: this._fb.array([]),
   });
 
-  get exercisesArray() { return this.workoutForm.get('exercises') as FormArray; }
+  get exercisesArray(): FormArray { return this.workoutForm.get('exercises') as FormArray; }
 
-  public getControl(i: number, name: string) {
-    return (this.exercisesArray.at(i) as FormGroup).get(name) as any;
+  public getControl(i: number, name: string): AbstractControl {
+    return (this.exercisesArray.at(i) as FormGroup).get(name) as AbstractControl;
   }
 
   constructor(
@@ -63,11 +71,11 @@ export class WorkoutEditorComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() {
+  public ngOnInit(): void {
     const params = this._route.snapshot.paramMap;
     this.clientId.set(params.get('clientId')!);
-    const wId = params.get('workoutId');
-    const sId = params.get('seasonId');
+    const wId: string | null = params.get('workoutId');
+    const sId: string | null = params.get('seasonId');
 
     if (sId) {
       this.isNew.set(true);
@@ -78,21 +86,21 @@ export class WorkoutEditorComponent implements OnInit {
     }
 
     this._exerciseApi.getAll().subscribe({
-      next: (exs) => { this.exercises.set(exs); this._loadWorkout(); },
+      next: (exs: Exercise[]) => { this.exercises.set(exs); this._loadWorkout(); },
     });
   }
 
-  private _loadWorkout() {
+  private _loadWorkout(): void {
     if (this.isNew()) {
       this.loading.set(false);
       this.addRow();
       return;
     }
     this._workoutApi.getWorkout(this.workoutId()).subscribe({
-      next: (w) => {
+      next: (w: Workout) => {
         this.workout.set(w);
         this.workoutForm.patchValue({ notes: w.notes || '' });
-        w.workoutExercises.forEach((we) => {
+        w.workoutExercises.forEach((we: WorkoutExercise) => {
           this.exercisesArray.push(this._fb.group({
             exerciseId: [we.exerciseId, Validators.required],
             weight: [we.weight || null],
@@ -107,26 +115,26 @@ export class WorkoutEditorComponent implements OnInit {
     });
   }
 
-  public addRow() {
+  public addRow(): void {
     this.exercisesArray.push(this._fb.group({
       exerciseId: ['', Validators.required],
-      weight: [null],
+      weight: [null as number | null],
       sets: [3, [Validators.required, Validators.min(1)]],
       reps: [10, [Validators.required, Validators.min(1)]],
     }));
     this._updateRows();
   }
 
-  public removeRow(i: number) {
+  public removeRow(i: number): void {
     this.exercisesArray.removeAt(i);
     this._updateRows();
   }
 
-  private _updateRows() {
-    this.exerciseRows = this.exercisesArray.controls.map((_, i) => ({ index: i }));
+  private _updateRows(): void {
+    this.exerciseRows = this.exercisesArray.controls.map((_: AbstractControl, i: number) => ({ index: i }));
   }
 
-  public save() {
+  public save(): void {
     if (this.exercisesArray.length === 0) {
       this._snack.open('Добавьте хотя бы одно упражнение', 'OK', { duration: 3000 });
       return;
@@ -150,7 +158,7 @@ export class WorkoutEditorComponent implements OnInit {
           this._snack.open('Занятие создано', 'OK', { duration: 2500 });
           this._router.navigate(['/trainer/clients', this.clientId()]);
         },
-        error: (err) => {
+        error: (err: any) => {
           this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
           this.saving.set(false);
         },
@@ -164,7 +172,7 @@ export class WorkoutEditorComponent implements OnInit {
           this._snack.open('Занятие обновлено', 'OK', { duration: 2500 });
           this._router.navigate(['/trainer/clients', this.clientId()]);
         },
-        error: (err) => {
+        error: (err: any) => {
           this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
           this.saving.set(false);
         },

@@ -1,52 +1,60 @@
 // src/app/core/services/api.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Exercise, Season, Workout, ClientWithSeasons,
   TrainerSettings, User
 } from '../models/index';
 
-const API = environment.apiUrl;
+const API: string = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ExerciseApiService {
   constructor(private http: HttpClient) {}
 
-  getAll() {
+  public getAll(): Observable<Exercise[]> {
     return this.http.get<Exercise[]>(`${API}/exercises`);
   }
 
-  create(data: { name: string; description?: string }) {
+  public create(data: { name: string; description?: string }): Observable<Exercise> {
     return this.http.post<Exercise>(`${API}/exercises`, data);
   }
 
-  update(id: string, data: { name?: string; description?: string }) {
+  public update(id: string, data: { name?: string; description?: string }): Observable<Exercise> {
     return this.http.put<Exercise>(`${API}/exercises/${id}`, data);
   }
 
-  delete(id: string) {
+  public delete(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${API}/exercises/${id}`);
   }
+}
+
+export interface ClientListItem {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ClientApiService {
   constructor(private http: HttpClient) {}
 
-  getMyClients() {
-    return this.http.get<any[]>(`${API}/clients`);
+  public getMyClients(): Observable<ClientListItem[]> {
+    return this.http.get<ClientListItem[]>(`${API}/clients`);
   }
 
-  addClient(clientId: string) {
+  public addClient(clientId: string): Observable<unknown> {
     return this.http.post(`${API}/clients`, { clientId });
   }
 
-  removeClient(clientId: string) {
+  public removeClient(clientId: string): Observable<unknown> {
     return this.http.delete(`${API}/clients/${clientId}`);
   }
 
-  getClientDetail(clientId: string) {
+  public getClientDetail(clientId: string): Observable<ClientWithSeasons> {
     return this.http.get<ClientWithSeasons>(`${API}/clients/${clientId}`);
   }
 }
@@ -55,73 +63,85 @@ export class ClientApiService {
 export class SeasonApiService {
   constructor(private http: HttpClient) {}
 
-  getSeasons(clientId: string) {
+  public getSeasons(clientId: string): Observable<Season[]> {
     return this.http.get<Season[]>(`${API}/clients/${clientId}/seasons`);
   }
 
-  createSeason(clientId: string, data: { startDate: string; endDate?: string }) {
+  public createSeason(clientId: string, data: { startDate: string; endDate?: string }): Observable<Season> {
     return this.http.post<Season>(`${API}/clients/${clientId}/seasons`, data);
   }
 
-  updateSeason(clientId: string, seasonId: string, data: any) {
+  public updateSeason(clientId: string, seasonId: string, data: { name?: string; endDate?: string }): Observable<Season> {
     return this.http.put<Season>(`${API}/clients/${clientId}/seasons/${seasonId}`, data);
   }
+}
+
+export interface CreateWorkoutData {
+  seasonId: string;
+  notes?: string;
+  exercises: Array<{ exerciseId: string; sets: number; reps: number; weight?: number; order: number }>;
+}
+
+export interface UpdateWorkoutData {
+  notes?: string;
+  exercises?: Array<{ exerciseId: string; sets: number; reps: number; weight?: number; order: number }>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class WorkoutApiService {
   constructor(private http: HttpClient) {}
 
-  getWorkout(id: string) {
+  public getWorkout(id: string): Observable<Workout> {
     return this.http.get<Workout>(`${API}/workouts/${id}`);
   }
 
-  createWorkout(data: {
-    seasonId: string;
-    notes?: string;
-    exercises: Array<{ exerciseId: string; sets: number; reps: number; weight?: number; order: number }>;
-  }) {
+  public createWorkout(data: CreateWorkoutData): Observable<Workout> {
     return this.http.post<Workout>(`${API}/workouts`, data);
   }
 
-  updateWorkout(id: string, data: any) {
+  public updateWorkout(id: string, data: UpdateWorkoutData): Observable<Workout> {
     return this.http.put<Workout>(`${API}/workouts/${id}`, data);
   }
 
-  deleteWorkout(id: string) {
+  public deleteWorkout(id: string): Observable<unknown> {
     return this.http.delete(`${API}/workouts/${id}`);
   }
 
-  saveProgress(id: string, doneExerciseIds: string[]) {
+  public saveProgress(id: string, doneExerciseIds: string[]): Observable<Workout> {
     return this.http.patch<Workout>(`${API}/workouts/${id}/progress`, { doneExerciseIds });
   }
 
-  completeWorkout(id: string, doneExerciseIds: string[]) {
+  public completeWorkout(id: string, doneExerciseIds: string[]): Observable<Workout> {
     return this.http.post<Workout>(`${API}/workouts/${id}/complete`, { doneExerciseIds });
   }
 
-  getClientSeasons(trainerId: string) {
+  public getClientSeasons(trainerId: string): Observable<Season[]> {
     return this.http.get<Season[]>(`${API}/workouts/client/${trainerId}/seasons`);
   }
+}
+
+export interface ClientSettings {
+  clientId: string;
+  trainerId: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class SettingsApiService {
   constructor(private http: HttpClient) {}
 
-  getTrainerSettings() {
+  public getTrainerSettings(): Observable<TrainerSettings> {
     return this.http.get<TrainerSettings>(`${API}/settings/trainer`);
   }
 
-  updateTrainerSettings(sessionsPerSeason: number) {
+  public updateTrainerSettings(sessionsPerSeason: number): Observable<TrainerSettings> {
     return this.http.put<TrainerSettings>(`${API}/settings/trainer`, { sessionsPerSeason });
   }
 
-  getClientSettings() {
-    return this.http.get<{ clientId: string; trainerId: string | null }>(`${API}/settings/client`);
+  public getClientSettings(): Observable<ClientSettings> {
+    return this.http.get<ClientSettings>(`${API}/settings/client`);
   }
 
-  setClientTrainer(trainerId: string | null) {
+  public setClientTrainer(trainerId: string | null): Observable<unknown> {
     return this.http.put(`${API}/settings/client/trainer`, { trainerId });
   }
 }
@@ -130,11 +150,11 @@ export class SettingsApiService {
 export class UserApiService {
   constructor(private http: HttpClient) {}
 
-  getMe() {
+  public getMe(): Observable<User> {
     return this.http.get<User>(`${API}/users/me`);
   }
 
-  getTrainers() {
+  public getTrainers(): Observable<User[]> {
     return this.http.get<User[]>(`${API}/users/trainers`);
   }
 }

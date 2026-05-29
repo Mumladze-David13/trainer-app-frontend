@@ -1,8 +1,8 @@
 // src/app/features/trainer/clients/client-detail.component.ts
-import { Component, signal, OnInit, computed } from '@angular/core';
+import { Component, signal, OnInit, computed, WritableSignal, Signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +17,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ClientApiService, SeasonApiService, WorkoutApiService } from '../../../core/services/api.service';
-import { Season, Workout } from '../../../core/models/index';
+import { Season, Workout, User } from '../../../core/models/index';
 
 @Component({
   selector: 'app-client-detail',
@@ -33,22 +33,25 @@ import { Season, Workout } from '../../../core/models/index';
   styleUrls: ['./client-detail.component.css'],
 })
 export class ClientDetailComponent implements OnInit {
-  public loading = signal(true);
-  public seasons = signal<Season[]>([]);
-  public client = signal<any>(null);
-  public sessionsPerSeason = signal(30);
-  public showSeasonForm = signal(false);
-  public savingSeason = signal(false);
-  public clientId = signal('');
+  public loading: WritableSignal<boolean> = signal(true);
+  public seasons: WritableSignal<Season[]> = signal<Season[]>([]);
+  public client: WritableSignal<User | null> = signal<User | null>(null);
+  public sessionsPerSeason: WritableSignal<number> = signal(30);
+  public showSeasonForm: WritableSignal<boolean> = signal(false);
+  public savingSeason: WritableSignal<boolean> = signal(false);
+  public clientId: WritableSignal<string> = signal('');
 
-  public clientName = computed(() => {
-    const c = this.client();
+  public clientName: Signal<string> = computed(() => {
+    const c: User | null = this.client();
     return c ? `${c.firstName} ${c.lastName}` : '';
   });
 
-  public seasonForm = this._fb.group({
+  public seasonForm: FormGroup<{
+    startDate: FormControl<Date | null>;
+    endDate: FormControl<Date | null>;
+  }> = this._fb.group({
     startDate: [new Date(), Validators.required],
-    endDate: [null],
+    endDate: [null as Date | null],
   });
 
   constructor(
@@ -59,13 +62,13 @@ export class ClientDetailComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() {
-    const id = this._route.snapshot.paramMap.get('clientId')!;
+  public ngOnInit(): void {
+    const id: string = this._route.snapshot.paramMap.get('clientId')!;
     this.clientId.set(id);
     this._load(id);
   }
 
-  private _load(clientId: string) {
+  private _load(clientId: string): void {
     this.loading.set(true);
     this._clientApi.getClientDetail(clientId).subscribe({
       next: (data) => {
@@ -78,11 +81,11 @@ export class ClientDetailComponent implements OnInit {
     });
   }
 
-  public workoutCountClass(season: Season) {
+  public workoutCountClass(season: Season): string {
     return season.workouts.length >= this.sessionsPerSeason() ? 'warn-count' : 'ok-count';
   }
 
-  public createSeason() {
+  public createSeason(): void {
     if (this.seasonForm.invalid) { this.seasonForm.markAllAsTouched(); return; }
     this.savingSeason.set(true);
     const v = this.seasonForm.value;
@@ -96,7 +99,7 @@ export class ClientDetailComponent implements OnInit {
         this._load(this.clientId());
         this.savingSeason.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingSeason.set(false);
       },

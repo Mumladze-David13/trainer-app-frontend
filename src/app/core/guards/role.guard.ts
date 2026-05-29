@@ -2,12 +2,13 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Role } from '../models/index';
 
-export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
+export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boolean => {
+  const auth: AuthService = inject(AuthService);
+  const router: Router = inject(Router);
   const requiredRoles: string[] = route.data['roles'] || [];
-  const userRole = auth.currentUser()?.role;
+  const userRole: Role | undefined = auth.currentUser()?.role;
 
   if (!userRole) {
     router.navigate(['/auth/login']);

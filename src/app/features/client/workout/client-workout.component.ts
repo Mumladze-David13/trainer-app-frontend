@@ -1,5 +1,5 @@
 // src/app/features/client/workout/client-workout.component.ts
-import { Component, signal, OnInit, computed } from '@angular/core';
+import { Component, signal, OnInit, computed, WritableSignal, Signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -28,21 +28,21 @@ import { Workout, WorkoutExercise } from '../../../core/models/index';
   styleUrls: ['./client-workout.component.css'],
 })
 export class ClientWorkoutComponent implements OnInit {
-  public loading = signal(true);
-  public saving = signal(false);
-  public workout = signal<Workout | null>(null);
-  public doneIds = signal<Set<string>>(new Set());
+  public loading: WritableSignal<boolean> = signal(true);
+  public saving: WritableSignal<boolean> = signal(false);
+  public workout: WritableSignal<Workout | null> = signal<Workout | null>(null);
+  public doneIds: WritableSignal<Set<string>> = signal<Set<string>>(new Set());
 
-  public total = computed(() => this.workout()?.workoutExercises.length || 0);
-  public doneCount = computed(() => this.doneIds().size);
-  public donePercent = computed(() =>
+  public total: Signal<number> = computed(() => this.workout()?.workoutExercises.length || 0);
+  public doneCount: Signal<number> = computed(() => this.doneIds().size);
+  public donePercent: Signal<number> = computed(() =>
     this.total() ? Math.round((this.doneCount() / this.total()) * 100) : 0,
   );
-  public needMore = computed(() => {
-    const needed = Math.ceil(this.total() * 0.5);
+  public needMore: Signal<number> = computed(() => {
+    const needed: number = Math.ceil(this.total() * 0.5);
     return Math.max(0, needed - this.doneCount());
   });
-  public progressClass = computed(() => this.donePercent() >= 50 ? 'progress-ok' : 'progress-warn');
+  public progressClass: Signal<string> = computed(() => this.donePercent() >= 50 ? 'progress-ok' : 'progress-warn');
 
   constructor(
     private _route: ActivatedRoute,
@@ -51,13 +51,13 @@ export class ClientWorkoutComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() {
-    const id = this._route.snapshot.paramMap.get('workoutId')!;
+  public ngOnInit(): void {
+    const id: string = this._route.snapshot.paramMap.get('workoutId')!;
     this._workoutApi.getWorkout(id).subscribe({
-      next: (w) => {
+      next: (w: Workout) => {
         this.workout.set(w);
         // Initialize done state from saved data
-        const done = new Set(w.workoutExercises.filter((e) => e.isDone).map((e) => e.id));
+        const done: Set<string> = new Set(w.workoutExercises.filter((e: WorkoutExercise) => e.isDone).map((e: WorkoutExercise) => e.id));
         this.doneIds.set(done);
         this.loading.set(false);
       },
@@ -67,38 +67,38 @@ export class ClientWorkoutComponent implements OnInit {
 
   public isDone(id: string): boolean { return this.doneIds().has(id); }
 
-  public toggleExercise(id: string, checked: boolean) {
-    const set = new Set(this.doneIds());
+  public toggleExercise(id: string, checked: boolean): void {
+    const set: Set<string> = new Set(this.doneIds());
     checked ? set.add(id) : set.delete(id);
     this.doneIds.set(set);
   }
 
-  public saveAndClose() {
+  public saveAndClose(): void {
     this.saving.set(true);
-    const ids = Array.from(this.doneIds());
+    const ids: string[] = Array.from(this.doneIds());
     this._workoutApi.saveProgress(this.workout()!.id, ids).subscribe({
       next: () => {
         this._snack.open('Прогресс сохранён', 'OK', { duration: 2000 });
         this._router.navigate(['/client/seasons']);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
     });
   }
 
-  public completeWorkout() {
+  public completeWorkout(): void {
     if (this.donePercent() < 50) return;
     this.saving.set(true);
-    const ids = Array.from(this.doneIds());
+    const ids: string[] = Array.from(this.doneIds());
     this._workoutApi.completeWorkout(this.workout()!.id, ids).subscribe({
-      next: (w) => {
+      next: (w: Workout) => {
         this.workout.set(w);
         this._snack.open('🎉 Занятие выполнено!', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },

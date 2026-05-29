@@ -1,11 +1,21 @@
 // src/app/features/dashboard/dashboard.component.ts
-import { Component, computed } from '@angular/core';
+import { Component, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../core/services/auth.service';
+import { Role } from '../../core/models/index';
+
+interface DashboardCard {
+  title: string;
+  desc: string;
+  icon: string;
+  link: string;
+  color: string;
+  roles: string[];
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -14,8 +24,9 @@ import { AuthService } from '../../core/services/auth.service';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
+
 export class DashboardComponent {
-  private _allCards = [
+  private _allCards: DashboardCard[] = [
     {
       title: 'Упражнения',
       desc: 'Справочник упражнений',
@@ -50,10 +61,10 @@ export class DashboardComponent {
     },
   ];
 
-  public visibleCards = computed(() => {
-    const role = this.auth.currentUser()?.role;
-    const mode = this.auth.activeMode();
-    return this._allCards.filter((c) => {
+  public visibleCards: Signal<DashboardCard[]> = computed(() => {
+    const role: Role | undefined = this.auth.currentUser()?.role;
+    const mode: 'trainer' | 'client' = this.auth.activeMode();
+    return this._allCards.filter((c: DashboardCard) => {
       if (role === 'TRAINER') return c.roles.includes('TRAINER');
       if (role === 'CLIENT') return c.roles.includes('CLIENT');
       if (role === 'TRAINER_CLIENT') {
@@ -63,8 +74,8 @@ export class DashboardComponent {
     });
   });
 
-  public roleDesc = computed(() => {
-    const r = this.auth.currentUser()?.role;
+  public roleDesc: Signal<string> = computed(() => {
+    const r: Role | undefined = this.auth.currentUser()?.role;
     if (r === 'TRAINER') return 'Вы работаете в режиме тренера';
     if (r === 'CLIENT') return 'Вы работаете в режиме клиента';
     return 'Вы можете переключаться между режимами тренера и клиента';

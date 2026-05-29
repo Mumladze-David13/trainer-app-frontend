@@ -1,7 +1,7 @@
 // src/app/features/trainer/exercises/exercises.component.ts
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,14 +29,17 @@ import { Exercise } from '../../../core/models/index';
   styleUrls: ['./exercises.component.css'],
 })
 export class ExercisesComponent implements OnInit {
-  public columns = ['name', 'actions'];
-  public exercises = signal<Exercise[]>([]);
-  public loading = signal(true);
-  public saving = signal(false);
-  public showForm = signal(false);
-  public editingId = signal<string | null>(null);
+  public columns: string[] = ['name', 'actions'];
+  public exercises: WritableSignal<Exercise[]> = signal<Exercise[]>([]);
+  public loading: WritableSignal<boolean> = signal(true);
+  public saving: WritableSignal<boolean> = signal(false);
+  public showForm: WritableSignal<boolean> = signal(false);
+  public editingId: WritableSignal<string | null> = signal<string | null>(null);
 
-  public form = this._fb.group({
+  public form: FormGroup<{
+    name: FormControl<string | null>;
+    description: FormControl<string | null>;
+  }> = this._fb.group({
     name: ['', Validators.required],
     description: [''],
   });
@@ -47,40 +50,40 @@ export class ExercisesComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() { this._load(); }
+  public ngOnInit(): void { this._load(); }
 
-  private _load() {
+  private _load(): void {
     this.loading.set(true);
     this._api.getAll().subscribe({
-      next: (data) => { this.exercises.set(data); this.loading.set(false); },
+      next: (data: Exercise[]) => { this.exercises.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  public openForm() {
+  public openForm(): void {
     this.editingId.set(null);
     this.form.reset();
     this.showForm.set(true);
   }
 
-  public editExercise(ex: Exercise) {
+  public editExercise(ex: Exercise): void {
     this.editingId.set(ex.id);
     this.form.patchValue({ name: ex.name, description: ex.description || '' });
     this.showForm.set(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  public cancelForm() {
+  public cancelForm(): void {
     this.showForm.set(false);
     this.editingId.set(null);
     this.form.reset();
   }
 
-  public save() {
+  public save(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
-    const data = { name: this.form.value.name!, description: this.form.value.description || undefined };
-    const id = this.editingId();
+    const data: { name: string; description?: string } = { name: this.form.value.name!, description: this.form.value.description || undefined };
+    const id: string | null = this.editingId();
     const req = id ? this._api.update(id, data) : this._api.create(data);
     req.subscribe({
       next: () => {
@@ -89,21 +92,21 @@ export class ExercisesComponent implements OnInit {
         this._load();
         this.saving.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
     });
   }
 
-  public deleteExercise(ex: Exercise) {
+  public deleteExercise(ex: Exercise): void {
     if (!confirm(`Удалить упражнение "${ex.name}"?`)) return;
     this._api.delete(ex.id).subscribe({
       next: () => {
         this._snack.open('Удалено', 'OK', { duration: 2000 });
         this._load();
       },
-      error: (err) => this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 }),
+      error: (err: any) => this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 }),
     });
   }
 }

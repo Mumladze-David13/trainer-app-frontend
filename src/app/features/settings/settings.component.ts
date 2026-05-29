@@ -1,7 +1,7 @@
 // src/app/features/settings/settings.component.ts
-import { Component, signal, OnInit, computed } from '@angular/core';
+import { Component, signal, OnInit, computed, WritableSignal, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,9 +12,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSliderModule } from '@angular/material/slider';
-import { SettingsApiService, UserApiService } from '../../core/services/api.service';
+import { SettingsApiService, UserApiService, ClientSettings } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { User } from '../../core/models/index';
+import { User, TrainerSettings } from '../../core/models/index';
 
 @Component({
   selector: 'app-settings',
@@ -30,26 +30,30 @@ import { User } from '../../core/models/index';
   styleUrls: ['./settings.component.css'],
 })
 export class SettingsComponent implements OnInit {
-  public loadingTrainer = signal(true);
-  public loadingClient = signal(true);
-  public savingTrainer = signal(false);
-  public savingClient = signal(false);
-  public trainers = signal<User[]>([]);
+  public loadingTrainer: WritableSignal<boolean> = signal(true);
+  public loadingClient: WritableSignal<boolean> = signal(true);
+  public savingTrainer: WritableSignal<boolean> = signal(false);
+  public savingClient: WritableSignal<boolean> = signal(false);
+  public trainers: WritableSignal<User[]> = signal<User[]>([]);
 
-  public trainerForm = this._fb.group({
+  public trainerForm: FormGroup<{
+    sessionsPerSeason: FormControl<number | null>;
+  }> = this._fb.group({
     sessionsPerSeason: [30, [Validators.required, Validators.min(1), Validators.max(365)]],
   });
 
-  public clientForm = this._fb.group({
+  public clientForm: FormGroup<{
+    trainerId: FormControl<string | null>;
+  }> = this._fb.group({
     trainerId: [null as string | null],
   });
 
-  public currentTrainer = computed(() => {
-    const tid = this.clientForm.value.trainerId;
-    return tid ? this.trainers().find((t) => t.id === tid) || null : null;
+  public currentTrainer: Signal<User | null> = computed(() => {
+    const tid: string | null = this.clientForm.value.trainerId || null;
+    return tid ? this.trainers().find((t: User) => t.id === tid) || null : null;
   });
 
-  public roleLabel = computed(() => {
+  public roleLabel: Signal<string> = computed(() => {
     const map: Record<string, string> = { TRAINER: 'Тренер', CLIENT: 'Клиент', TRAINER_CLIENT: 'Тренер-Клиент' };
     return map[this.auth.currentUser()?.role || ''] || '';
   });
@@ -62,10 +66,10 @@ export class SettingsComponent implements OnInit {
     private _snack: MatSnackBar,
   ) {}
 
-  public ngOnInit() {
+  public ngOnInit(): void {
     if (this.auth.isTrainer()) {
       this._settingsApi.getTrainerSettings().subscribe({
-        next: (s) => {
+        next: (s: TrainerSettings) => {
           this.trainerForm.patchValue({ sessionsPerSeason: s.sessionsPerSeason });
           this.loadingTrainer.set(false);
         },
@@ -75,18 +79,18 @@ export class SettingsComponent implements OnInit {
 
     if (this.auth.isClient()) {
       this._userApi.getTrainers().subscribe({
-        next: (ts) => {
+        next: (ts: User[]) => {
           // Include self for TRAINER_CLIENT
-          const me = this.auth.currentUser();
-          const list = [...ts];
-          if (me && me.role === 'TRAINER_CLIENT' && !list.find(t => t.id === me.id)) {
-            list.unshift(me as any);
+          const me: User | null = this.auth.currentUser();
+          const list: User[] = [...ts];
+          if (me && me.role === 'TRAINER_CLIENT' && !list.find((t: User) => t.id === me.id)) {
+            list.unshift(me);
           }
           this.trainers.set(list);
         },
       });
       this._settingsApi.getClientSettings().subscribe({
-        next: (s) => {
+        next: (s: ClientSettings) => {
           this.clientForm.patchValue({ trainerId: s.trainerId });
           this.loadingClient.set(false);
         },
@@ -95,7 +99,7 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  public saveTrainerSettings() {
+  public saveTrainerSettings(): void {
     if (this.trainerForm.invalid) return;
     this.savingTrainer.set(true);
     this._settingsApi.updateTrainerSettings(this.trainerForm.value.sessionsPerSeason!).subscribe({
@@ -103,21 +107,21 @@ export class SettingsComponent implements OnInit {
         this._snack.open('Настройки сохранены', 'OK', { duration: 2500 });
         this.savingTrainer.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingTrainer.set(false);
       },
     });
   }
 
-  public saveClientSettings() {
+  public saveClientSettings(): void {
     this.savingClient.set(true);
     this._settingsApi.setClientTrainer(this.clientForm.value.trainerId || null).subscribe({
       next: () => {
         this._snack.open('Тренер сохранён', 'OK', { duration: 2500 });
         this.savingClient.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingClient.set(false);
       },

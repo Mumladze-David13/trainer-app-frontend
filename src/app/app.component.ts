@@ -1,5 +1,5 @@
 // src/app/app.component.ts
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -10,9 +10,10 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from './core/services/auth.service';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
+import { Role } from './core/models/index';
 
 @Component({
   selector: 'app-root',
@@ -27,30 +28,30 @@ import { map } from 'rxjs';
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  public auth = inject(AuthService);
-  private _breakpointObserver = inject(BreakpointObserver);
+  public auth: AuthService = inject(AuthService);
+  private _breakpointObserver: BreakpointObserver = inject(BreakpointObserver);
 
-  public isMobile = toSignal(
+  public isMobile: Signal<boolean> = toSignal(
     this._breakpointObserver.observe([Breakpoints.XSmall, Breakpoints.Small])
-      .pipe(map(r => r.matches)),
+      .pipe(map((r: BreakpointState) => r.matches)),
     { initialValue: false },
   );
 
-  public showTrainerMenu = computed(() => {
-    const role = this.auth.currentUser()?.role;
+  public showTrainerMenu: Signal<boolean> = computed(() => {
+    const role: Role | undefined = this.auth.currentUser()?.role;
     if (role === 'TRAINER') return true;
     if (role === 'TRAINER_CLIENT') return this.auth.activeMode() === 'trainer';
     return false;
   });
 
-  public showClientMenu = computed(() => {
-    const role = this.auth.currentUser()?.role;
+  public showClientMenu: Signal<boolean> = computed(() => {
+    const role: Role | undefined = this.auth.currentUser()?.role;
     if (role === 'CLIENT') return true;
     if (role === 'TRAINER_CLIENT') return this.auth.activeMode() === 'client';
     return false;
   });
 
-  public roleLabel = computed(() => {
+  public roleLabel: Signal<string> = computed(() => {
     const roleMap: Record<string, string> = {
       TRAINER: 'Тренер',
       CLIENT: 'Клиент',
