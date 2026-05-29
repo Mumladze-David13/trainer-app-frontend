@@ -32,45 +32,45 @@ import { User } from '../../../core/models/index';
   styleUrls: ['./clients-list.component.css'],
 })
 export class ClientsListComponent implements OnInit {
-  clients = signal<any[]>([]);
-  allUsers = signal<User[]>([]);
-  loading = signal(true);
-  adding = signal(false);
-  showAddForm = signal(false);
-  selectedUser = new FormControl<string>('');
-  currentUserId = signal<string>('');
+  public clients = signal<any[]>([]);
+  public allUsers = signal<User[]>([]);
+  public loading = signal(true);
+  public adding = signal(false);
+  public showAddForm = signal(false);
+  public selectedUser = new FormControl<string>('');
+  public currentUserId = signal<string>('');
 
-  isSelf = () => this.selectedUser.value === this.currentUserId();
+  public isSelf = () => this.selectedUser.value === this.currentUserId();
 
   constructor(
-    private clientApi: ClientApiService,
-    private userApi: UserApiService,
-    private auth: AuthService,
-    private snack: MatSnackBar,
+    private _clientApi: ClientApiService,
+    private _userApi: UserApiService,
+    private _auth: AuthService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() {
-    this.currentUserId.set(this.auth.currentUser()?.id || '');
-    this.load();
-    this.userApi.getTrainers().subscribe(); // preload
+  public ngOnInit() {
+    this.currentUserId.set(this._auth.currentUser()?.id || '');
+    this._load();
+    this._userApi.getTrainers().subscribe(); // preload
     // Load all users for the add form
-    this.userApi.getMe().subscribe();
+    this._userApi.getMe().subscribe();
   }
 
-  load() {
+  private _load() {
     this.loading.set(true);
-    this.clientApi.getMyClients().subscribe({
+    this._clientApi.getMyClients().subscribe({
       next: (data) => { this.clients.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
     // Fetch all users (not just trainers) - use trainers endpoint as base, add self
-    this.userApi.getTrainers().subscribe({
+    this._userApi.getTrainers().subscribe({
       next: (trainers) => {
         // In a real app we'd have a users/all endpoint. For now show all registered users
         // The trainer can add any user as client including themselves
         this.allUsers.set(trainers);
         // Add current user (themselves) if TRAINER_CLIENT
-        const me = this.auth.currentUser();
+        const me = this._auth.currentUser();
         if (me && !trainers.find(t => t.id === me.id)) {
           this.allUsers.update(u => [me as any, ...u]);
         }
@@ -78,20 +78,20 @@ export class ClientsListComponent implements OnInit {
     });
   }
 
-  addClient() {
+  public addClient() {
     const clientId = this.selectedUser.value;
     if (!clientId) return;
     this.adding.set(true);
-    this.clientApi.addClient(clientId).subscribe({
+    this._clientApi.addClient(clientId).subscribe({
       next: () => {
-        this.snack.open('Клиент добавлен', 'OK', { duration: 2500 });
+        this._snack.open('Клиент добавлен', 'OK', { duration: 2500 });
         this.showAddForm.set(false);
         this.selectedUser.reset();
-        this.load();
+        this._load();
         this.adding.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.adding.set(false);
       },
     });

@@ -27,30 +27,30 @@ import { map } from 'rxjs';
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  auth = inject(AuthService);
-  private breakpointObserver = inject(BreakpointObserver);
+  public auth = inject(AuthService);
+  private _breakpointObserver = inject(BreakpointObserver);
 
-  isMobile = toSignal(
-    this.breakpointObserver.observe([Breakpoints.XSmall, Breakpoints.Small])
+  public isMobile = toSignal(
+    this._breakpointObserver.observe([Breakpoints.XSmall, Breakpoints.Small])
       .pipe(map(r => r.matches)),
     { initialValue: false },
   );
 
-  showTrainerMenu = computed(() => {
+  public showTrainerMenu = computed(() => {
     const role = this.auth.currentUser()?.role;
     if (role === 'TRAINER') return true;
     if (role === 'TRAINER_CLIENT') return this.auth.activeMode() === 'trainer';
     return false;
   });
 
-  showClientMenu = computed(() => {
+  public showClientMenu = computed(() => {
     const role = this.auth.currentUser()?.role;
     if (role === 'CLIENT') return true;
     if (role === 'TRAINER_CLIENT') return this.auth.activeMode() === 'client';
     return false;
   });
 
-  roleLabel = computed(() => {
+  public roleLabel = computed(() => {
     const roleMap: Record<string, string> = {
       TRAINER: 'Тренер',
       CLIENT: 'Клиент',

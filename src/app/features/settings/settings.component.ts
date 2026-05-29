@@ -30,41 +30,41 @@ import { User } from '../../core/models/index';
   styleUrls: ['./settings.component.css'],
 })
 export class SettingsComponent implements OnInit {
-  loadingTrainer = signal(true);
-  loadingClient = signal(true);
-  savingTrainer = signal(false);
-  savingClient = signal(false);
-  trainers = signal<User[]>([]);
+  public loadingTrainer = signal(true);
+  public loadingClient = signal(true);
+  public savingTrainer = signal(false);
+  public savingClient = signal(false);
+  public trainers = signal<User[]>([]);
 
-  trainerForm = this.fb.group({
+  public trainerForm = this._fb.group({
     sessionsPerSeason: [30, [Validators.required, Validators.min(1), Validators.max(365)]],
   });
 
-  clientForm = this.fb.group({
+  public clientForm = this._fb.group({
     trainerId: [null as string | null],
   });
 
-  currentTrainer = computed(() => {
+  public currentTrainer = computed(() => {
     const tid = this.clientForm.value.trainerId;
     return tid ? this.trainers().find((t) => t.id === tid) || null : null;
   });
 
-  roleLabel = computed(() => {
+  public roleLabel = computed(() => {
     const map: Record<string, string> = { TRAINER: 'Тренер', CLIENT: 'Клиент', TRAINER_CLIENT: 'Тренер-Клиент' };
     return map[this.auth.currentUser()?.role || ''] || '';
   });
 
   constructor(
-    private fb: FormBuilder,
+    private _fb: FormBuilder,
     public auth: AuthService,
-    private settingsApi: SettingsApiService,
-    private userApi: UserApiService,
-    private snack: MatSnackBar,
+    private _settingsApi: SettingsApiService,
+    private _userApi: UserApiService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() {
+  public ngOnInit() {
     if (this.auth.isTrainer()) {
-      this.settingsApi.getTrainerSettings().subscribe({
+      this._settingsApi.getTrainerSettings().subscribe({
         next: (s) => {
           this.trainerForm.patchValue({ sessionsPerSeason: s.sessionsPerSeason });
           this.loadingTrainer.set(false);
@@ -74,7 +74,7 @@ export class SettingsComponent implements OnInit {
     }
 
     if (this.auth.isClient()) {
-      this.userApi.getTrainers().subscribe({
+      this._userApi.getTrainers().subscribe({
         next: (ts) => {
           // Include self for TRAINER_CLIENT
           const me = this.auth.currentUser();
@@ -85,7 +85,7 @@ export class SettingsComponent implements OnInit {
           this.trainers.set(list);
         },
       });
-      this.settingsApi.getClientSettings().subscribe({
+      this._settingsApi.getClientSettings().subscribe({
         next: (s) => {
           this.clientForm.patchValue({ trainerId: s.trainerId });
           this.loadingClient.set(false);
@@ -95,30 +95,30 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  saveTrainerSettings() {
+  public saveTrainerSettings() {
     if (this.trainerForm.invalid) return;
     this.savingTrainer.set(true);
-    this.settingsApi.updateTrainerSettings(this.trainerForm.value.sessionsPerSeason!).subscribe({
+    this._settingsApi.updateTrainerSettings(this.trainerForm.value.sessionsPerSeason!).subscribe({
       next: () => {
-        this.snack.open('Настройки сохранены', 'OK', { duration: 2500 });
+        this._snack.open('Настройки сохранены', 'OK', { duration: 2500 });
         this.savingTrainer.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingTrainer.set(false);
       },
     });
   }
 
-  saveClientSettings() {
+  public saveClientSettings() {
     this.savingClient.set(true);
-    this.settingsApi.setClientTrainer(this.clientForm.value.trainerId || null).subscribe({
+    this._settingsApi.setClientTrainer(this.clientForm.value.trainerId || null).subscribe({
       next: () => {
-        this.snack.open('Тренер сохранён', 'OK', { duration: 2500 });
+        this._snack.open('Тренер сохранён', 'OK', { duration: 2500 });
         this.savingClient.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingClient.set(false);
       },
     });

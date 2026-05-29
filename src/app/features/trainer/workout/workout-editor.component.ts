@@ -30,41 +30,41 @@ import { Exercise, Workout } from '../../../core/models/index';
   styleUrls: ['./workout-editor.component.css'],
 })
 export class WorkoutEditorComponent implements OnInit {
-  columns = ['order', 'exercise', 'weight', 'sets', 'reps', 'actions'];
+  public columns = ['order', 'exercise', 'weight', 'sets', 'reps', 'actions'];
 
-  loading = signal(true);
-  saving = signal(false);
-  exercises = signal<Exercise[]>([]);
-  workout = signal<Workout | null>(null);
-  isNew = signal(true);
-  clientId = signal('');
-  seasonId = signal('');
-  workoutId = signal('');
+  public loading = signal(true);
+  public saving = signal(false);
+  public exercises = signal<Exercise[]>([]);
+  public workout = signal<Workout | null>(null);
+  public isNew = signal(true);
+  public clientId = signal('');
+  public seasonId = signal('');
+  public workoutId = signal('');
 
-  exerciseRows: any[] = [];
+  public exerciseRows: any[] = [];
 
-  workoutForm = this.fb.group({
+  public workoutForm = this._fb.group({
     notes: [''],
-    exercises: this.fb.array([]),
+    exercises: this._fb.array([]),
   });
 
   get exercisesArray() { return this.workoutForm.get('exercises') as FormArray; }
 
-  getControl(i: number, name: string) {
+  public getControl(i: number, name: string) {
     return (this.exercisesArray.at(i) as FormGroup).get(name) as any;
   }
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private fb: FormBuilder,
-    private workoutApi: WorkoutApiService,
-    private exerciseApi: ExerciseApiService,
-    private snack: MatSnackBar,
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _fb: FormBuilder,
+    private _workoutApi: WorkoutApiService,
+    private _exerciseApi: ExerciseApiService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() {
-    const params = this.route.snapshot.paramMap;
+  public ngOnInit() {
+    const params = this._route.snapshot.paramMap;
     this.clientId.set(params.get('clientId')!);
     const wId = params.get('workoutId');
     const sId = params.get('seasonId');
@@ -77,58 +77,58 @@ export class WorkoutEditorComponent implements OnInit {
       this.workoutId.set(wId);
     }
 
-    this.exerciseApi.getAll().subscribe({
-      next: (exs) => { this.exercises.set(exs); this.loadWorkout(); },
+    this._exerciseApi.getAll().subscribe({
+      next: (exs) => { this.exercises.set(exs); this._loadWorkout(); },
     });
   }
 
-  loadWorkout() {
+  private _loadWorkout() {
     if (this.isNew()) {
       this.loading.set(false);
       this.addRow();
       return;
     }
-    this.workoutApi.getWorkout(this.workoutId()).subscribe({
+    this._workoutApi.getWorkout(this.workoutId()).subscribe({
       next: (w) => {
         this.workout.set(w);
         this.workoutForm.patchValue({ notes: w.notes || '' });
         w.workoutExercises.forEach((we) => {
-          this.exercisesArray.push(this.fb.group({
+          this.exercisesArray.push(this._fb.group({
             exerciseId: [we.exerciseId, Validators.required],
             weight: [we.weight || null],
             sets: [we.sets, [Validators.required, Validators.min(1)]],
             reps: [we.reps, [Validators.required, Validators.min(1)]],
           }));
         });
-        this.updateRows();
+        this._updateRows();
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  addRow() {
-    this.exercisesArray.push(this.fb.group({
+  public addRow() {
+    this.exercisesArray.push(this._fb.group({
       exerciseId: ['', Validators.required],
       weight: [null],
       sets: [3, [Validators.required, Validators.min(1)]],
       reps: [10, [Validators.required, Validators.min(1)]],
     }));
-    this.updateRows();
+    this._updateRows();
   }
 
-  removeRow(i: number) {
+  public removeRow(i: number) {
     this.exercisesArray.removeAt(i);
-    this.updateRows();
+    this._updateRows();
   }
 
-  updateRows() {
+  private _updateRows() {
     this.exerciseRows = this.exercisesArray.controls.map((_, i) => ({ index: i }));
   }
 
-  save() {
+  public save() {
     if (this.exercisesArray.length === 0) {
-      this.snack.open('Добавьте хотя бы одно упражнение', 'OK', { duration: 3000 });
+      this._snack.open('Добавьте хотя бы одно упражнение', 'OK', { duration: 3000 });
       return;
     }
     this.saving.set(true);
@@ -141,31 +141,31 @@ export class WorkoutEditorComponent implements OnInit {
     }));
 
     if (this.isNew()) {
-      this.workoutApi.createWorkout({
+      this._workoutApi.createWorkout({
         seasonId: this.seasonId(),
         notes: this.workoutForm.value.notes || undefined,
         exercises,
       }).subscribe({
         next: () => {
-          this.snack.open('Занятие создано', 'OK', { duration: 2500 });
-          this.router.navigate(['/trainer/clients', this.clientId()]);
+          this._snack.open('Занятие создано', 'OK', { duration: 2500 });
+          this._router.navigate(['/trainer/clients', this.clientId()]);
         },
         error: (err) => {
-          this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
+          this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
           this.saving.set(false);
         },
       });
     } else {
-      this.workoutApi.updateWorkout(this.workoutId(), {
+      this._workoutApi.updateWorkout(this.workoutId(), {
         notes: this.workoutForm.value.notes || undefined,
         exercises,
       }).subscribe({
         next: () => {
-          this.snack.open('Занятие обновлено', 'OK', { duration: 2500 });
-          this.router.navigate(['/trainer/clients', this.clientId()]);
+          this._snack.open('Занятие обновлено', 'OK', { duration: 2500 });
+          this._router.navigate(['/trainer/clients', this.clientId()]);
         },
         error: (err) => {
-          this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
+          this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 4000 });
           this.saving.set(false);
         },
       });

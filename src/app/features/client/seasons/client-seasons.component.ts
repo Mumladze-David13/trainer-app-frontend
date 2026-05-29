@@ -25,21 +25,21 @@ import { Season, Workout } from '../../../core/models/index';
   styleUrls: ['./client-seasons.component.css'],
 })
 export class ClientSeasonsComponent implements OnInit {
-  loading = signal(true);
-  seasons = signal<Season[]>([]);
-  trainerId = signal<string | null>(null);
+  public loading = signal(true);
+  public seasons = signal<Season[]>([]);
+  public trainerId = signal<string | null>(null);
 
   constructor(
-    private workoutApi: WorkoutApiService,
-    private settingsApi: SettingsApiService,
+    private _workoutApi: WorkoutApiService,
+    private _settingsApi: SettingsApiService,
   ) {}
 
-  ngOnInit() {
-    this.settingsApi.getClientSettings().subscribe({
+  public ngOnInit() {
+    this._settingsApi.getClientSettings().subscribe({
       next: (s) => {
         this.trainerId.set(s.trainerId);
         if (s.trainerId) {
-          this.loadSeasons(s.trainerId);
+          this._loadSeasons(s.trainerId);
         } else {
           this.loading.set(false);
         }
@@ -48,18 +48,18 @@ export class ClientSeasonsComponent implements OnInit {
     });
   }
 
-  loadSeasons(trainerId: string) {
-    this.workoutApi.getClientSeasons(trainerId).subscribe({
+  private _loadSeasons(trainerId: string) {
+    this._workoutApi.getClientSeasons(trainerId).subscribe({
       next: (data) => { this.seasons.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  completedCount(season: Season) {
+  public completedCount(season: Season) {
     return season.workouts.filter((w) => w.isCompleted).length;
   }
 
-  donePercent(w: Workout) {
+  public donePercent(w: Workout) {
     const total = w.workoutExercises.length;
     if (!total) return 0;
     const done = w.workoutExercises.filter((e) => e.isDone).length;

@@ -23,23 +23,23 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent {
-  form = this.fb.group({
+  public form = this._fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
 
-  loading = signal(false);
-  error = signal('');
-  showPass = signal(false);
+  public loading = signal(false);
+  public error = signal('');
+  public showPass = signal(false);
 
-  constructor(private fb: FormBuilder, private auth: AuthService) {}
+  constructor(private _fb: FormBuilder, private _auth: AuthService) {}
 
-  onSubmit() {
+  public onSubmit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
     this.error.set('');
     const { email, password } = this.form.value;
-    this.auth.login(email!, password!).subscribe({
+    this._auth.login(email!, password!).subscribe({
       error: (err) => {
         this.error.set(err.error?.message || 'Неверный email или пароль');
         this.loading.set(false);

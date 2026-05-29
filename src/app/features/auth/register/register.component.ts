@@ -34,13 +34,13 @@ interface RoleOption {
   styleUrls: ['./register.component.css'],
 })
 export class RegisterComponent {
-  roles: RoleOption[] = [
+  public roles: RoleOption[] = [
     { value: 'TRAINER', label: 'Тренер', description: 'Веду клиентов', icon: 'sports' },
     { value: 'CLIENT', label: 'Клиент', description: 'Занимаюсь у тренера', icon: 'person' },
     { value: 'TRAINER_CLIENT', label: 'Тренер-клиент', description: 'Оба режима', icon: 'swap_horiz' },
   ];
 
-  form = this.fb.group({
+  public form = this._fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
@@ -48,18 +48,18 @@ export class RegisterComponent {
     role: ['', Validators.required],
   });
 
-  loading = signal(false);
-  error = signal('');
-  showPass = signal(false);
+  public loading = signal(false);
+  public error = signal('');
+  public showPass = signal(false);
 
-  constructor(private fb: FormBuilder, private auth: AuthService) {}
+  constructor(private _fb: FormBuilder, private _auth: AuthService) {}
 
-  onSubmit() {
+  public onSubmit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
     this.error.set('');
     const v = this.form.value;
-    this.auth.register({
+    this._auth.register({
       email: v.email!,
       password: v.password!,
       firstName: v.firstName!,

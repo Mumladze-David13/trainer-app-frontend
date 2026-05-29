@@ -15,7 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent {
-  private allCards = [
+  private _allCards = [
     {
       title: 'Упражнения',
       desc: 'Справочник упражнений',
@@ -50,10 +50,10 @@ export class DashboardComponent {
     },
   ];
 
-  visibleCards = computed(() => {
+  public visibleCards = computed(() => {
     const role = this.auth.currentUser()?.role;
     const mode = this.auth.activeMode();
-    return this.allCards.filter((c) => {
+    return this._allCards.filter((c) => {
       if (role === 'TRAINER') return c.roles.includes('TRAINER');
       if (role === 'CLIENT') return c.roles.includes('CLIENT');
       if (role === 'TRAINER_CLIENT') {
@@ -63,7 +63,7 @@ export class DashboardComponent {
     });
   });
 
-  roleDesc = computed(() => {
+  public roleDesc = computed(() => {
     const r = this.auth.currentUser()?.role;
     if (r === 'TRAINER') return 'Вы работаете в режиме тренера';
     if (r === 'CLIENT') return 'Вы работаете в режиме клиента';

@@ -28,32 +28,32 @@ import { Workout, WorkoutExercise } from '../../../core/models/index';
   styleUrls: ['./client-workout.component.css'],
 })
 export class ClientWorkoutComponent implements OnInit {
-  loading = signal(true);
-  saving = signal(false);
-  workout = signal<Workout | null>(null);
-  doneIds = signal<Set<string>>(new Set());
+  public loading = signal(true);
+  public saving = signal(false);
+  public workout = signal<Workout | null>(null);
+  public doneIds = signal<Set<string>>(new Set());
 
-  total = computed(() => this.workout()?.workoutExercises.length || 0);
-  doneCount = computed(() => this.doneIds().size);
-  donePercent = computed(() =>
+  public total = computed(() => this.workout()?.workoutExercises.length || 0);
+  public doneCount = computed(() => this.doneIds().size);
+  public donePercent = computed(() =>
     this.total() ? Math.round((this.doneCount() / this.total()) * 100) : 0,
   );
-  needMore = computed(() => {
+  public needMore = computed(() => {
     const needed = Math.ceil(this.total() * 0.5);
     return Math.max(0, needed - this.doneCount());
   });
-  progressClass = computed(() => this.donePercent() >= 50 ? 'progress-ok' : 'progress-warn');
+  public progressClass = computed(() => this.donePercent() >= 50 ? 'progress-ok' : 'progress-warn');
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private workoutApi: WorkoutApiService,
-    private snack: MatSnackBar,
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _workoutApi: WorkoutApiService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('workoutId')!;
-    this.workoutApi.getWorkout(id).subscribe({
+  public ngOnInit() {
+    const id = this._route.snapshot.paramMap.get('workoutId')!;
+    this._workoutApi.getWorkout(id).subscribe({
       next: (w) => {
         this.workout.set(w);
         // Initialize done state from saved data
@@ -65,41 +65,41 @@ export class ClientWorkoutComponent implements OnInit {
     });
   }
 
-  isDone(id: string): boolean { return this.doneIds().has(id); }
+  public isDone(id: string): boolean { return this.doneIds().has(id); }
 
-  toggleExercise(id: string, checked: boolean) {
+  public toggleExercise(id: string, checked: boolean) {
     const set = new Set(this.doneIds());
     checked ? set.add(id) : set.delete(id);
     this.doneIds.set(set);
   }
 
-  saveAndClose() {
+  public saveAndClose() {
     this.saving.set(true);
     const ids = Array.from(this.doneIds());
-    this.workoutApi.saveProgress(this.workout()!.id, ids).subscribe({
+    this._workoutApi.saveProgress(this.workout()!.id, ids).subscribe({
       next: () => {
-        this.snack.open('Прогресс сохранён', 'OK', { duration: 2000 });
-        this.router.navigate(['/client/seasons']);
+        this._snack.open('Прогресс сохранён', 'OK', { duration: 2000 });
+        this._router.navigate(['/client/seasons']);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
     });
   }
 
-  completeWorkout() {
+  public completeWorkout() {
     if (this.donePercent() < 50) return;
     this.saving.set(true);
     const ids = Array.from(this.doneIds());
-    this.workoutApi.completeWorkout(this.workout()!.id, ids).subscribe({
+    this._workoutApi.completeWorkout(this.workout()!.id, ids).subscribe({
       next: (w) => {
         this.workout.set(w);
-        this.snack.open('🎉 Занятие выполнено!', 'OK', { duration: 3000 });
+        this._snack.open('🎉 Занятие выполнено!', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
     });

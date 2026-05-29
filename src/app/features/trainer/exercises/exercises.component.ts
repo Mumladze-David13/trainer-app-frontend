@@ -29,81 +29,81 @@ import { Exercise } from '../../../core/models/index';
   styleUrls: ['./exercises.component.css'],
 })
 export class ExercisesComponent implements OnInit {
-  columns = ['name', 'actions'];
-  exercises = signal<Exercise[]>([]);
-  loading = signal(true);
-  saving = signal(false);
-  showForm = signal(false);
-  editingId = signal<string | null>(null);
+  public columns = ['name', 'actions'];
+  public exercises = signal<Exercise[]>([]);
+  public loading = signal(true);
+  public saving = signal(false);
+  public showForm = signal(false);
+  public editingId = signal<string | null>(null);
 
-  form = this.fb.group({
+  public form = this._fb.group({
     name: ['', Validators.required],
     description: [''],
   });
 
   constructor(
-    private fb: FormBuilder,
-    private api: ExerciseApiService,
-    private snack: MatSnackBar,
+    private _fb: FormBuilder,
+    private _api: ExerciseApiService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() { this.load(); }
+  public ngOnInit() { this._load(); }
 
-  load() {
+  private _load() {
     this.loading.set(true);
-    this.api.getAll().subscribe({
+    this._api.getAll().subscribe({
       next: (data) => { this.exercises.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  openForm() {
+  public openForm() {
     this.editingId.set(null);
     this.form.reset();
     this.showForm.set(true);
   }
 
-  editExercise(ex: Exercise) {
+  public editExercise(ex: Exercise) {
     this.editingId.set(ex.id);
     this.form.patchValue({ name: ex.name, description: ex.description || '' });
     this.showForm.set(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  cancelForm() {
+  public cancelForm() {
     this.showForm.set(false);
     this.editingId.set(null);
     this.form.reset();
   }
 
-  save() {
+  public save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     const data = { name: this.form.value.name!, description: this.form.value.description || undefined };
     const id = this.editingId();
-    const req = id ? this.api.update(id, data) : this.api.create(data);
+    const req = id ? this._api.update(id, data) : this._api.create(data);
     req.subscribe({
       next: () => {
-        this.snack.open(id ? 'Упражнение обновлено' : 'Упражнение добавлено', 'OK', { duration: 2500 });
+        this._snack.open(id ? 'Упражнение обновлено' : 'Упражнение добавлено', 'OK', { duration: 2500 });
         this.cancelForm();
-        this.load();
+        this._load();
         this.saving.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.saving.set(false);
       },
     });
   }
 
-  deleteExercise(ex: Exercise) {
+  public deleteExercise(ex: Exercise) {
     if (!confirm(`Удалить упражнение "${ex.name}"?`)) return;
-    this.api.delete(ex.id).subscribe({
+    this._api.delete(ex.id).subscribe({
       next: () => {
-        this.snack.open('Удалено', 'OK', { duration: 2000 });
-        this.load();
+        this._snack.open('Удалено', 'OK', { duration: 2000 });
+        this._load();
       },
-      error: (err) => this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 }),
+      error: (err) => this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 }),
     });
   }
 }

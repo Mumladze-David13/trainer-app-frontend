@@ -33,41 +33,41 @@ import { Season, Workout } from '../../../core/models/index';
   styleUrls: ['./client-detail.component.css'],
 })
 export class ClientDetailComponent implements OnInit {
-  loading = signal(true);
-  seasons = signal<Season[]>([]);
-  client = signal<any>(null);
-  sessionsPerSeason = signal(30);
-  showSeasonForm = signal(false);
-  savingSeason = signal(false);
-  clientId = signal('');
+  public loading = signal(true);
+  public seasons = signal<Season[]>([]);
+  public client = signal<any>(null);
+  public sessionsPerSeason = signal(30);
+  public showSeasonForm = signal(false);
+  public savingSeason = signal(false);
+  public clientId = signal('');
 
-  clientName = computed(() => {
+  public clientName = computed(() => {
     const c = this.client();
     return c ? `${c.firstName} ${c.lastName}` : '';
   });
 
-  seasonForm = this.fb.group({
+  public seasonForm = this._fb.group({
     startDate: [new Date(), Validators.required],
     endDate: [null],
   });
 
   constructor(
-    private route: ActivatedRoute,
-    private fb: FormBuilder,
-    private clientApi: ClientApiService,
-    private seasonApi: SeasonApiService,
-    private snack: MatSnackBar,
+    private _route: ActivatedRoute,
+    private _fb: FormBuilder,
+    private _clientApi: ClientApiService,
+    private _seasonApi: SeasonApiService,
+    private _snack: MatSnackBar,
   ) {}
 
-  ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('clientId')!;
+  public ngOnInit() {
+    const id = this._route.snapshot.paramMap.get('clientId')!;
     this.clientId.set(id);
-    this.load(id);
+    this._load(id);
   }
 
-  load(clientId: string) {
+  private _load(clientId: string) {
     this.loading.set(true);
-    this.clientApi.getClientDetail(clientId).subscribe({
+    this._clientApi.getClientDetail(clientId).subscribe({
       next: (data) => {
         this.client.set(data.client);
         this.seasons.set(data.seasons);
@@ -78,26 +78,26 @@ export class ClientDetailComponent implements OnInit {
     });
   }
 
-  workoutCountClass(season: Season) {
+  public workoutCountClass(season: Season) {
     return season.workouts.length >= this.sessionsPerSeason() ? 'warn-count' : 'ok-count';
   }
 
-  createSeason() {
+  public createSeason() {
     if (this.seasonForm.invalid) { this.seasonForm.markAllAsTouched(); return; }
     this.savingSeason.set(true);
     const v = this.seasonForm.value;
-    this.seasonApi.createSeason(this.clientId(), {
+    this._seasonApi.createSeason(this.clientId(), {
       startDate: (v.startDate as Date).toISOString(),
       endDate: v.endDate ? (v.endDate as Date).toISOString() : undefined,
     }).subscribe({
       next: () => {
-        this.snack.open('Сезон создан', 'OK', { duration: 2500 });
+        this._snack.open('Сезон создан', 'OK', { duration: 2500 });
         this.showSeasonForm.set(false);
-        this.load(this.clientId());
+        this._load(this.clientId());
         this.savingSeason.set(false);
       },
       error: (err) => {
-        this.snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
+        this._snack.open(err.error?.message || 'Ошибка', 'OK', { duration: 3000 });
         this.savingSeason.set(false);
       },
     });
