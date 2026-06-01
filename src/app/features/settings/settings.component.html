@@ -1,0 +1,146 @@
+<h2>Настройки</h2>
+
+<!-- User info card -->
+<mat-card class="settings-card">
+  <mat-card-header>
+    <mat-icon mat-card-avatar>account_circle</mat-icon>
+    <mat-card-title>Профиль</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="info-row">
+      <span class="label">Имя</span>
+      <span>{{ auth.currentUser()?.firstName }} {{ auth.currentUser()?.lastName }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Email</span>
+      <span>{{ auth.currentUser()?.email }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Роль</span>
+      <span class="role-badge" [class]="'role-' + auth.currentUser()?.role?.toLowerCase()">
+        {{ roleLabel() }}
+      </span>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- Trainer settings -->
+@if (auth.isTrainer()) {
+  <mat-card class="settings-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>sports</mat-icon>
+      <mat-card-title>Настройки тренера</mat-card-title>
+      <mat-card-subtitle>Параметры тренировочного процесса</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loadingTrainer()) {
+        <mat-spinner diameter="30" />
+      } @else {
+        <form [formGroup]="trainerForm" (ngSubmit)="saveTrainerSettings()">
+          <div class="slider-section">
+            <div class="slider-label">
+              <mat-icon>event_repeat</mat-icon>
+              Занятий в сезоне:
+              <strong>{{ trainerForm.value.sessionsPerSeason }}</strong>
+            </div>
+            <div class="slider-hint">
+              Максимальное количество занятий в одном сезоне для каждого клиента
+            </div>
+            <div class="sessions-input">
+              <mat-form-field appearance="outline">
+                <mat-label>Количество занятий</mat-label>
+                <input matInput type="number" formControlName="sessionsPerSeason"
+                       min="1" max="365" />
+                <mat-hint>от 1 до 365</mat-hint>
+                @if (trainerForm.get('sessionsPerSeason')?.hasError('min')) {
+                  <mat-error>Минимум 1</mat-error>
+                }
+                @if (trainerForm.get('sessionsPerSeason')?.hasError('max')) {
+                  <mat-error>Максимум 365</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button mat-raised-button color="primary" type="submit"
+                    [disabled]="savingTrainer() || trainerForm.invalid">
+              {{ savingTrainer() ? 'Сохраняю...' : 'Сохранить' }}
+            </button>
+          </div>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Client settings -->
+@if (auth.isClient()) {
+  <mat-card class="settings-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>person</mat-icon>
+      <mat-card-title>Мой тренер</mat-card-title>
+      <mat-card-subtitle>Выберите основного тренера</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loadingClient()) {
+        <mat-spinner diameter="30" />
+      } @else {
+        <form [formGroup]="clientForm" (ngSubmit)="saveClientSettings()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Выберите тренера</mat-label>
+            <mat-select formControlName="trainerId">
+              <mat-option [value]="null">— Без тренера —</mat-option>
+              @for (t of trainers(); track t.id) {
+                <mat-option [value]="t.id">
+                  {{ t.firstName }} {{ t.lastName }}
+                  @if (t.id === auth.currentUser()?.id) { (Я — тренер сам себе) }
+                  <span class="trainer-email">({{ t.email }})</span>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (currentTrainer()) {
+            <div class="current-trainer">
+              <mat-icon>check_circle</mat-icon>
+              Текущий тренер: <strong>{{ currentTrainer()!.firstName }} {{ currentTrainer()!.lastName }}</strong>
+            </div>
+          }
+
+          <div class="card-actions">
+            <button mat-raised-button color="primary" type="submit" [disabled]="savingClient()">
+              {{ savingClient() ? 'Сохраняю...' : 'Сохранить' }}
+            </button>
+          </div>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Mode switcher for TRAINER_CLIENT -->
+@if (auth.isTrainerClient()) {
+  <mat-card class="settings-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>swap_horiz</mat-icon>
+      <mat-card-title>Режим интерфейса</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="mode-buttons">
+        <button mat-raised-button
+                [color]="auth.activeMode() === 'trainer' ? 'primary' : ''"
+                (click)="auth.setActiveMode('trainer')">
+          <mat-icon>sports</mat-icon> Режим тренера
+        </button>
+        <button mat-raised-button
+                [color]="auth.activeMode() === 'client' ? 'primary' : ''"
+                (click)="auth.setActiveMode('client')">
+          <mat-icon>person</mat-icon> Режим клиента
+        </button>
+      </div>
+      <p class="mode-hint">
+        Вы можете переключаться между режимами в любое время из бокового меню или здесь.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}

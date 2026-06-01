@@ -1,0 +1,107 @@
+<div class="back-row">
+  <button mat-button routerLink="/client/seasons">
+    <mat-icon>arrow_back</mat-icon> Назад к занятиям
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="center"><mat-spinner /></div>
+} @else if (workout()) {
+  <div class="workout-header">
+    <div>
+      <h2>Занятие</h2>
+      <div class="workout-date">{{ workout()!.date | date:'EEEE, dd MMMM yyyy' }}</div>
+    </div>
+    @if (workout()!.isCompleted) {
+      <div class="completed-badge">
+        <mat-icon>check_circle</mat-icon> Выполнено
+      </div>
+    }
+  </div>
+
+  @if (workout()!.notes) {
+    <mat-card class="notes-card">
+      <mat-card-content>
+        <mat-icon>notes</mat-icon>
+        {{ workout()!.notes }}
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Progress bar -->
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>Прогресс</span>
+      <span [class]="progressClass()">{{ doneCount() }}/{{ total() }} упражнений ({{ donePercent() }}%)</span>
+    </div>
+    <mat-progress-bar mode="determinate" [value]="donePercent()"
+                      [color]="donePercent() >= 50 ? 'accent' : 'primary'" />
+    @if (donePercent() >= 50 && !workout()!.isCompleted) {
+      <div class="can-complete-note">
+        <mat-icon>star</mat-icon>
+        Выполнено более 50% — можно завершить занятие!
+      </div>
+    }
+  </div>
+
+  <!-- Exercise list -->
+  <mat-card class="exercises-card">
+    <mat-card-content>
+      @for (we of workout()!.workoutExercises; track we.id; let i = $index) {
+        <div class="exercise-row" [class.done]="isDone(we.id)" [class.completed-workout]="workout()!.isCompleted">
+          <mat-checkbox
+            [checked]="isDone(we.id)"
+            [disabled]="workout()!.isCompleted"
+            (change)="toggleExercise(we.id, $event.checked)">
+          </mat-checkbox>
+
+          <div class="ex-info">
+            <div class="ex-name" [class.done-name]="isDone(we.id)">
+              {{ i + 1 }}. {{ we.exercise.name }}
+            </div>
+            <div class="ex-details">
+              @if (we.weight) { <span>{{ we.weight }} кг</span> · }
+              <span>{{ we.sets }} подх. × {{ we.reps }} повт.</span>
+            </div>
+          </div>
+
+          @if (isDone(we.id)) {
+            <mat-icon class="check-icon">check_circle</mat-icon>
+          }
+        </div>
+        @if (i < workout()!.workoutExercises.length - 1) {
+          <mat-divider />
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Action buttons -->
+  @if (!workout()!.isCompleted) {
+    <div class="action-bar">
+      <button mat-button (click)="saveAndClose()" [disabled]="saving()">
+        <mat-icon>save</mat-icon> Сохранить и закрыть
+      </button>
+
+      <button mat-raised-button color="accent"
+              [disabled]="donePercent() < 50 || saving()"
+              (click)="completeWorkout()"
+              [matTooltip]="donePercent() < 50 ? 'Выполните минимум 50% упражнений' : ''">
+        <mat-icon>emoji_events</mat-icon>
+        {{ saving() ? 'Сохраняю...' : 'Занятие выполнено!' }}
+      </button>
+    </div>
+
+    @if (donePercent() < 50 && doneCount() > 0) {
+      <div class="hint">
+        Ещё {{ needMore() }} упр. для завершения занятия
+      </div>
+    }
+  } @else {
+    <div class="completed-bar">
+      <mat-icon>celebration</mat-icon>
+      Занятие завершено! Отличная работа!
+      <button mat-button routerLink="/client/seasons">Вернуться</button>
+    </div>
+  }
+}

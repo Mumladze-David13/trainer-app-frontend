@@ -1,0 +1,133 @@
+<div class="back-row">
+  <button mat-button routerLink="/trainer/clients">
+    <mat-icon>arrow_back</mat-icon> Все клиенты
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="center"><mat-spinner /></div>
+} @else {
+  <div class="client-header">
+    <div class="client-avatar">
+      {{ clientName()[0] }}{{ clientName().split(' ')[1]?.[0] || '' }}
+    </div>
+    <div>
+      <h2>{{ clientName() }}</h2>
+      <div class="client-email">{{ client()?.email }}</div>
+    </div>
+    <div class="sessions-info">
+      <mat-icon>info_outline</mat-icon>
+      Занятий в сезоне: <strong>{{ sessionsPerSeason() }}</strong>
+    </div>
+  </div>
+
+  <!-- Add Season Form -->
+  @if (showSeasonForm()) {
+    <mat-card class="form-card">
+      <mat-card-content>
+        <h3>Новый сезон</h3>
+        <form [formGroup]="seasonForm" (ngSubmit)="createSeason()">
+          <div class="season-name-hint">
+            <mat-icon>info_outline</mat-icon>
+            Название присваивается автоматически: Сезон {{ seasons().length + 1 }}
+          </div>
+          <div class="date-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Дата начала</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+              <mat-datepicker-toggle matSuffix [for]="startPicker" />
+              <mat-datepicker #startPicker />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Дата окончания (необяз.)</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+              <mat-datepicker-toggle matSuffix [for]="endPicker" />
+              <mat-datepicker #endPicker />
+            </mat-form-field>
+          </div>
+          <div class="form-actions">
+            <button mat-button type="button" (click)="showSeasonForm.set(false)">Отмена</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="savingSeason()">
+              {{ savingSeason() ? 'Создаю...' : 'Создать сезон' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <div class="seasons-header">
+    <h3>Сезоны</h3>
+    <button mat-raised-button color="accent" (click)="showSeasonForm.set(true)">
+      <mat-icon>add</mat-icon> Новый сезон
+    </button>
+  </div>
+
+  @if (seasons().length === 0) {
+    <div class="empty-state">
+      <mat-icon>event_note</mat-icon>
+      <p>Нет сезонов. Создайте первый!</p>
+    </div>
+  } @else {
+    <mat-accordion multi="false">
+      @for (season of seasons(); track season.id; let i = $index) {
+        <mat-expansion-panel [expanded]="i === 0">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon>event_note</mat-icon>
+              {{ season.name }}
+            </mat-panel-title>
+            <mat-panel-description>
+              {{ season.startDate | date:'dd.MM.yyyy' }}
+              @if (season.endDate) { — {{ season.endDate | date:'dd.MM.yyyy' }} }
+              &nbsp;·&nbsp;
+              <span [class]="workoutCountClass(season)">
+                {{ season.workouts.length }}/{{ sessionsPerSeason() }} занятий
+              </span>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="season-content">
+            <div class="workout-list-header">
+              <span>Занятия</span>
+              <button mat-raised-button color="primary" [disabled]="season.workouts.length >= sessionsPerSeason()"
+                      [routerLink]="['/trainer/clients', clientId(), 'workout', 'new', season.id]">
+                <mat-icon>add</mat-icon> Добавить занятие
+              </button>
+            </div>
+
+            @if (season.workouts.length >= sessionsPerSeason()) {
+              <div class="limit-warn">
+                <mat-icon>warning</mat-icon>
+                Достигнут лимит занятий в сезоне ({{ sessionsPerSeason() }})
+              </div>
+            }
+
+            @if (season.workouts.length === 0) {
+              <p class="no-workouts">Занятий нет. Добавьте первое!</p>
+            } @else {
+              <div class="workout-cards">
+                @for (w of season.workouts; track w.id) {
+                  <div class="workout-item"
+                       [routerLink]="['/trainer/clients', clientId(), 'workout', w.id]">
+                    <div class="workout-date">
+                      <mat-icon>today</mat-icon>
+                      {{ w.date | date:'dd.MM.yyyy' }}
+                    </div>
+                    <div class="workout-meta">
+                      {{ w.workoutExercises.length }} упр.
+                    </div>
+                    @if (w.isCompleted) {
+                      <mat-icon class="done-icon" matTooltip="Выполнено клиентом">check_circle</mat-icon>
+                    }
+                    <mat-icon class="arrow">chevron_right</mat-icon>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </mat-expansion-panel>
+      }
+    </mat-accordion>
+  }
+}

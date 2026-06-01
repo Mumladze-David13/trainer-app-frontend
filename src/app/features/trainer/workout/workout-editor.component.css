@@ -1,0 +1,49 @@
+.back-row { margin-bottom: 8px; }
+h2 { margin: 0 0 16px; }
+mat-card-content { padding: 16px !important; }
+.full-width { width: 100%; }
+.exercises-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 12px;
+}
+.exercises-header h3 { margin: 0; }
+.no-exercises { text-align: center; padding: 40px 20px; color: rgba(0,0,0,0.4); }
+.no-exercises mat-icon { font-size: 40px; width: 40px; height: 40px; display: block; margin: 0 auto 8px; }
+.center { display: flex; justify-content: center; padding: 40px; }
+.table-wrap { overflow-x: auto; }
+.exercise-table { width: 100%; min-width: 500px; }
+.table-select { width: 180px; }
+.num-input {
+  width: 60px; border: 1px solid #e0e0e0;
+  border-radius: 4px; padding: 6px 8px;
+  font-size: 14px; text-align: center;
+}
+.num-input:focus { outline: 2px solid #1976d2; border-color: transparent; }
+.save-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 20px; flex-wrap: wrap;
+}
+
+/* Mobile exercise cards */
+.mobile-exercises { display: none; }
+@media (max-width: 600px) {
+  .table-wrap { display: none; }
+  .mobile-exercises { display: flex; flex-direction: column; gap: 12px; }
+  .mobile-exercise-card {
+    border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px;
+  }
+  .mobile-ex-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 8px;
+  }
+  .ex-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #1976d2; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 500;
+  }
+  .mobile-nums {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  }
+}

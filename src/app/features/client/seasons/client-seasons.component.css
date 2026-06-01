@@ -1,0 +1,31 @@
+h2 { margin: 0 0 16px; }
+.center { display: flex; justify-content: center; padding: 40px; }
+.no-trainer mat-card-content {
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  padding: 40px 20px !important;
+}
+.no-trainer mat-icon { font-size: 48px; width: 48px; height: 48px; color: rgba(0,0,0,0.3); }
+.no-trainer h3 { margin: 12px 0 4px; }
+.no-trainer p { color: rgba(0,0,0,0.5); margin-bottom: 16px; }
+mat-expansion-panel-header mat-icon { margin-right: 6px; }
+.season-content { padding-top: 4px; }
+.empty { color: rgba(0,0,0,0.4); text-align: center; padding: 16px; }
+.workout-list { display: flex; flex-direction: column; gap: 6px; }
+.workout-row {
+  display: flex; align-items: center;
+  gap: 12px; padding: 12px 14px;
+  background: #f8f9fa; border-radius: 8px;
+  cursor: pointer; transition: background 0.15s;
+  border: 2px solid transparent;
+}
+.workout-row:hover { background: #e3f2fd; }
+.workout-row.last-workout { border-color: #1976d2; background: #e8f4ff; }
+.workout-left { flex: 1; }
+.workout-date { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 500; text-transform: capitalize; }
+.workout-stats { font-size: 12px; color: rgba(0,0,0,0.5); margin-top: 2px; }
+.done-text { color: #388e3c; font-weight: 500; }
+.workout-right { display: flex; align-items: center; gap: 4px; }
+.completed-icon { color: #388e3c; }
+.open-chip { background: #1976d2 !important; color: white !important; font-size: 11px !important; height: 24px !important; }
+.arrow { color: rgba(0,0,0,0.3); }

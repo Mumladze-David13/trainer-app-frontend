@@ -1,0 +1,31 @@
+<div class="dashboard">
+  <h1 class="greeting">
+    Добро пожаловать, {{ auth.currentUser()?.firstName }}!
+  </h1>
+  <p class="subtitle">{{ roleDesc() }}</p>
+
+  @if (auth.isTrainerClient()) {
+    <div class="mode-banner">
+      <mat-icon>swap_horiz</mat-icon>
+      Активный режим:
+      <strong>{{ auth.activeMode() === 'trainer' ? 'Тренер' : 'Клиент' }}</strong>
+      — переключайте в боковом меню
+    </div>
+  }
+
+  <div class="cards-grid">
+    @for (card of visibleCards(); track card.title) {
+      <mat-card class="dash-card" [routerLink]="card.link">
+        <mat-card-content>
+          <div class="card-icon" [style.background]="card.color">
+            <mat-icon>{{ card.icon }}</mat-icon>
+          </div>
+          <div class="card-info">
+            <div class="card-title">{{ card.title }}</div>
+            <div class="card-desc">{{ card.desc }}</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</div>
