@@ -5,14 +5,9 @@
 </div>
 
 @if (loading()) {
-    <div class="center"><mat-spinner /></div>
-} @else {
-    <h2>{{ isNew() ? 'Новое занятие' : 'Занятие от ' + (workout()!.date | date:'dd.MM.yyyy') }}</h2>
-}
-
-@if (loading()) {
   <div class="center"><mat-spinner /></div>
 } @else {
+  <h2>{{ isNew() ? 'Новое занятие' : 'Занятие от ' + (workout()!.date | date:'dd.MM.yyyy') }}</h2>
   <mat-card>
     <mat-card-content>
       <form [formGroup]="workoutForm">
