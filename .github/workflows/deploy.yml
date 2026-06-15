@@ -24,5 +24,6 @@ jobs:
             # Получить последние изменения
             git pull origin main
 
-            # Пересобрать и перезапустить контейнер
-            docker compose up -d --build frontend
+            # Пересобрать и перезапустить контейнер (--no-cache гарантирует свежую сборку)
+            docker compose build --no-cache frontend
+            docker compose up -d frontend
