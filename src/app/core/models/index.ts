@@ -35,6 +35,9 @@ export interface WorkoutExercise {
   weight?: number;
   order: number;
   isDone: boolean;
+  setWeights?: number[];
+  supersetGroup?: number;
+  supersetOrder?: number;
 }
 
 export interface WorkoutCompletion {
@@ -74,4 +77,13 @@ export interface TrainerSettings {
   id: string;
   trainerId: string;
   sessionsPerSeason: number;
+}
+
+export function hasSetWeights(exercise: WorkoutExercise): boolean {
+  return !!(exercise.setWeights && exercise.setWeights.length > 0);
+}
+
+export function weightForSet(exercise: WorkoutExercise, setIndex: number): number | null {
+  if (exercise.setWeights && exercise.setWeights.length > setIndex) return exercise.setWeights[setIndex] ?? null;
+  return exercise.weight ?? null;
 }

@@ -20,9 +20,17 @@
 
         <div class="exercises-header">
           <h3>Упражнения</h3>
-          <button mat-raised-button color="accent" type="button" (click)="addRow()">
-            <mat-icon>add</mat-icon> Добавить упражнение
-          </button>
+          <div class="exercises-actions">
+            <button mat-stroked-button type="button"
+                    (click)="openSupersetDialog()"
+                    [disabled]="exercisesArray.length < 2"
+                    matTooltip="Объединить упражнения в супер-сет">
+              <mat-icon>link</mat-icon> Супер-сет
+            </button>
+            <button mat-raised-button color="accent" type="button" (click)="addRow()">
+              <mat-icon>add</mat-icon> Добавить
+            </button>
+          </div>
         </div>
 
         @if (exercisesArray.length === 0) {
@@ -31,97 +39,136 @@
             <p>Нет упражнений. Добавьте хотя бы одно.</p>
           </div>
         } @else {
-          <!-- Desktop table -->
-          <div class="table-wrap">
-            <table mat-table [dataSource]="exerciseRows" class="exercise-table">
-              <ng-container matColumnDef="order">
-                <th mat-header-cell *matHeaderCellDef>#</th>
-                <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-              </ng-container>
+          <div class="exercises-list">
+            @for (item of renderItems; track (item.supersetGroup != null ? 'ss-' + item.supersetGroup : 'ex-' + item.indices[0])) {
 
-              <ng-container matColumnDef="exercise">
-                <th mat-header-cell *matHeaderCellDef>Упражнение</th>
-                <td mat-cell *matCellDef="let row; let i = index">
-                  <mat-select [formControl]="getControl(i, 'exerciseId')" class="table-select">
-                    @for (ex of exercises(); track ex.id) {
-                      <mat-option [value]="ex.id">{{ ex.name }}</mat-option>
-                    }
-                  </mat-select>
-                </td>
-              </ng-container>
+              @if (item.type === 'superset') {
+                <div class="superset-card">
+                  <div class="superset-header">
+                    <span class="superset-title">
+                      <mat-icon class="ss-icon">link</mat-icon>
+                      Супер-сет {{ item.supersetGroup }}
+                    </span>
+                    <div class="superset-shared">
+                      <span class="param-label">Подх.</span>
+                      <input type="number"
+                             [formControl]="$any(getControl(item.indices[0], 'sets'))"
+                             class="num-input" min="1"
+                             (input)="onSetsChange(item.indices[0], +$any($event.target).value)" />
+                      <span class="param-label">Повт.</span>
+                      <input type="number"
+                             [formControl]="$any(getControl(item.indices[0], 'reps'))"
+                             class="num-input" min="1"
+                             (input)="onRepsChange(item.supersetGroup!, +$any($event.target).value)" />
+                    </div>
+                    <button mat-icon-button color="warn" type="button"
+                            (click)="breakSuperset(item.supersetGroup!)"
+                            matTooltip="Разбить супер-сет">
+                      <mat-icon>link_off</mat-icon>
+                    </button>
+                  </div>
 
-              <ng-container matColumnDef="weight">
-                <th mat-header-cell *matHeaderCellDef>Вес (кг)</th>
-                <td mat-cell *matCellDef="let row; let i = index">
-                  <input type="number" [formControl]="getControl(i, 'weight')"
-                         class="num-input" placeholder="—" min="0" step="0.5" />
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="sets">
-                <th mat-header-cell *matHeaderCellDef>Подходы</th>
-                <td mat-cell *matCellDef="let row; let i = index">
-                  <input type="number" [formControl]="getControl(i, 'sets')"
-                         class="num-input" min="1" />
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="reps">
-                <th mat-header-cell *matHeaderCellDef>Повторы</th>
-                <td mat-cell *matCellDef="let row; let i = index">
-                  <input type="number" [formControl]="getControl(i, 'reps')"
-                         class="num-input" min="1" />
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef></th>
-                <td mat-cell *matCellDef="let row; let i = index">
-                  <button mat-icon-button color="warn" type="button"
-                          (click)="removeRow(i)" matTooltip="Удалить">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="columns"></tr>
-              <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-            </table>
-          </div>
-
-          <!-- Mobile cards -->
-          <div class="mobile-exercises">
-            @for (g of exercisesArray.controls; track $index; let i = $index) {
-              <div class="mobile-exercise-card">
-                <div class="mobile-ex-header">
-                  <span class="ex-num">{{ i + 1 }}</span>
-                  <button mat-icon-button color="warn" type="button" (click)="removeRow(i)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
+                  @for (idx of item.indices; track idx; let j = $index) {
+                    @if (j > 0) { <mat-divider /> }
+                    <div class="superset-exercise">
+                      <div class="ex-row">
+                        <span class="ex-num">{{ j + 1 }}</span>
+                        <mat-form-field appearance="outline" class="ex-field">
+                          <mat-select [formControl]="$any(getControl(idx, 'exerciseId'))">
+                            @for (ex of exercises(); track ex.id) {
+                              <mat-option [value]="ex.id">{{ ex.name }}</mat-option>
+                            }
+                          </mat-select>
+                        </mat-form-field>
+                        <button mat-icon-button color="warn" type="button" (click)="removeRow(idx)" matTooltip="Удалить">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                      <div class="weight-section">
+                        <mat-button-toggle-group [formControl]="$any(getControl(idx, 'useSetWeights'))" class="weight-toggle">
+                          <mat-button-toggle [value]="false">Общий вес</mat-button-toggle>
+                          <mat-button-toggle [value]="true">По подходам</mat-button-toggle>
+                        </mat-button-toggle-group>
+                        @if (!getControl(idx, 'useSetWeights').value) {
+                          <div class="weight-single">
+                            <input type="number" [formControl]="$any(getControl(idx, 'weight'))"
+                                   class="num-input" placeholder="—" min="0" step="0.5" />
+                            <span class="unit">кг</span>
+                          </div>
+                        } @else {
+                          <div class="set-weights">
+                            @for (j of setIndices(idx); track j) {
+                              <div class="set-weight-item">
+                                <span class="set-label">{{ j + 1 }} подх.</span>
+                                <input type="number" [formControl]="getSetWeightControl(idx, j)"
+                                       class="num-input" placeholder="—" min="0" step="0.5" />
+                                <span class="unit">кг</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Упражнение</mat-label>
-                  <mat-select [formControl]="getControl(i, 'exerciseId')">
-                    @for (ex of exercises(); track ex.id) {
-                      <mat-option [value]="ex.id">{{ ex.name }}</mat-option>
+
+              } @else {
+                <div class="exercise-card">
+                  <div class="ex-row">
+                    <span class="ex-num">{{ item.indices[0] + 1 }}</span>
+                    <mat-form-field appearance="outline" class="ex-field">
+                      <mat-select [formControl]="$any(getControl(item.indices[0], 'exerciseId'))">
+                        @for (ex of exercises(); track ex.id) {
+                          <mat-option [value]="ex.id">{{ ex.name }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" type="button"
+                            (click)="removeRow(item.indices[0])" matTooltip="Удалить">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="ex-params">
+                    <div class="param-group">
+                      <span class="param-label">Подходы</span>
+                      <input type="number" [formControl]="$any(getControl(item.indices[0], 'sets'))"
+                             class="num-input" min="1"
+                             (input)="onSetsChange(item.indices[0], +$any($event.target).value)" />
+                    </div>
+                    <div class="param-group">
+                      <span class="param-label">Повторы</span>
+                      <input type="number" [formControl]="$any(getControl(item.indices[0], 'reps'))"
+                             class="num-input" min="1" />
+                    </div>
+                  </div>
+
+                  <div class="weight-section">
+                    <mat-button-toggle-group [formControl]="$any(getControl(item.indices[0], 'useSetWeights'))" class="weight-toggle">
+                      <mat-button-toggle [value]="false">Общий вес</mat-button-toggle>
+                      <mat-button-toggle [value]="true">По подходам</mat-button-toggle>
+                    </mat-button-toggle-group>
+                    @if (!getControl(item.indices[0], 'useSetWeights').value) {
+                      <div class="weight-single">
+                        <input type="number" [formControl]="$any(getControl(item.indices[0], 'weight'))"
+                               class="num-input" placeholder="—" min="0" step="0.5" />
+                        <span class="unit">кг</span>
+                      </div>
+                    } @else {
+                      <div class="set-weights">
+                        @for (j of setIndices(item.indices[0]); track j) {
+                          <div class="set-weight-item">
+                            <span class="set-label">{{ j + 1 }} подх.</span>
+                            <input type="number" [formControl]="getSetWeightControl(item.indices[0], j)"
+                                   class="num-input" placeholder="—" min="0" step="0.5" />
+                            <span class="unit">кг</span>
+                          </div>
+                        }
+                      </div>
                     }
-                  </mat-select>
-                </mat-form-field>
-                <div class="mobile-nums">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Вес (кг)</mat-label>
-                    <input matInput type="number" [formControl]="getControl(i, 'weight')" min="0" step="0.5" />
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Подходы</mat-label>
-                    <input matInput type="number" [formControl]="getControl(i, 'sets')" min="1" />
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Повторы</mat-label>
-                    <input matInput type="number" [formControl]="getControl(i, 'reps')" min="1" />
-                  </mat-form-field>
+                  </div>
                 </div>
-              </div>
+              }
             }
           </div>
         }

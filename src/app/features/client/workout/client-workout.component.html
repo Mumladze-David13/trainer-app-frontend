@@ -28,7 +28,6 @@
     </mat-card>
   }
 
-  <!-- Progress bar -->
   <div class="progress-section">
     <div class="progress-label">
       <span>Прогресс</span>
@@ -44,45 +43,87 @@
     }
   </div>
 
-  <!-- Exercise list -->
   <mat-card class="exercises-card">
     <mat-card-content>
-      @for (we of workout()!.workoutExercises; track we.id; let i = $index) {
-        <div class="exercise-row" [class.done]="isDone(we.id)" [class.completed-workout]="workout()!.isCompleted">
-          <mat-checkbox
-            [checked]="isDone(we.id)"
-            [disabled]="workout()!.isCompleted"
-            (change)="toggleExercise(we.id, $event.checked)">
-          </mat-checkbox>
+      @for (group of groupedExercises(); track (group.group != null ? 'ss-' + group.group : group.exercises[0].id); let gi = $index) {
 
-          <div class="ex-info">
-            <div class="ex-name" [class.done-name]="isDone(we.id)">
-              {{ i + 1 }}. {{ we.exercise.name }}
+        @if (group.type === 'superset') {
+          <div class="superset-group">
+            <div class="superset-group-header">
+              <mat-icon class="ss-icon">link</mat-icon>
+              Супер-сет · {{ group.exercises[0].sets }} подх. × {{ group.exercises[0].reps }} повт.
             </div>
-            <div class="ex-details">
-              @if (we.weight) { <span>{{ we.weight }} кг</span> · }
-              <span>{{ we.sets }} подх. × {{ we.reps }} повт.</span>
-            </div>
+            @for (we of group.exercises; track we.id; let ei = $index) {
+              <div class="exercise-row ss-exercise-row" [class.done]="isDone(we.id)" [class.completed-workout]="workout()!.isCompleted">
+                <mat-checkbox
+                  [checked]="isDone(we.id)"
+                  [disabled]="workout()!.isCompleted"
+                  (change)="toggleExercise(we.id, $event.checked)">
+                </mat-checkbox>
+                <div class="ex-info">
+                  <div class="ex-name" [class.done-name]="isDone(we.id)">{{ we.exercise.name }}</div>
+                  <div class="ex-details">
+                    @if (hasSetWeights(we)) {
+                      <span>{{ we.reps }} повт. на подход</span>
+                      <div class="set-weight-chips">
+                        @for (w of we.setWeights!; track $index; let si = $index) {
+                          <span class="weight-chip">{{ si + 1 }}: {{ w }}кг</span>
+                        }
+                      </div>
+                    } @else if (we.weight) {
+                      <span>{{ we.weight }} кг · {{ we.reps }} повт.</span>
+                    } @else {
+                      <span>{{ we.reps }} повт.</span>
+                    }
+                  </div>
+                </div>
+                @if (isDone(we.id)) { <mat-icon class="check-icon">check_circle</mat-icon> }
+              </div>
+              @if (ei < group.exercises.length - 1) { <mat-divider /> }
+            }
           </div>
 
-          @if (isDone(we.id)) {
-            <mat-icon class="check-icon">check_circle</mat-icon>
-          }
-        </div>
-        @if (i < workout()!.workoutExercises.length - 1) {
+        } @else {
+          <div class="exercise-row" [class.done]="isDone(group.exercises[0].id)" [class.completed-workout]="workout()!.isCompleted">
+            <mat-checkbox
+              [checked]="isDone(group.exercises[0].id)"
+              [disabled]="workout()!.isCompleted"
+              (change)="toggleExercise(group.exercises[0].id, $event.checked)">
+            </mat-checkbox>
+            <div class="ex-info">
+              <div class="ex-name" [class.done-name]="isDone(group.exercises[0].id)">
+                {{ gi + 1 }}. {{ group.exercises[0].exercise.name }}
+              </div>
+              <div class="ex-details">
+                @if (hasSetWeights(group.exercises[0])) {
+                  <span>{{ group.exercises[0].reps }} повт. на подход</span>
+                  <div class="set-weight-chips">
+                    @for (w of group.exercises[0].setWeights!; track $index; let si = $index) {
+                      <span class="weight-chip">{{ si + 1 }}: {{ w }}кг</span>
+                    }
+                  </div>
+                } @else {
+                  @if (group.exercises[0].weight) { <span>{{ group.exercises[0].weight }} кг</span><span> · </span> }
+                  <span>{{ group.exercises[0].sets }} подх. × {{ group.exercises[0].reps }} повт.</span>
+                }
+              </div>
+            </div>
+            @if (isDone(group.exercises[0].id)) { <mat-icon class="check-icon">check_circle</mat-icon> }
+          </div>
+        }
+
+        @if (gi < groupedExercises().length - 1 && group.type === 'single') {
           <mat-divider />
         }
       }
     </mat-card-content>
   </mat-card>
 
-  <!-- Action buttons -->
   @if (!workout()!.isCompleted) {
     <div class="action-bar">
       <button mat-button (click)="saveAndClose()" [disabled]="saving()">
         <mat-icon>save</mat-icon> Сохранить и закрыть
       </button>
-
       <button mat-raised-button color="accent"
               [disabled]="donePercent() < 50 || saving()"
               (click)="completeWorkout()"
@@ -91,11 +132,8 @@
         {{ saving() ? 'Сохраняю...' : 'Занятие выполнено!' }}
       </button>
     </div>
-
     @if (donePercent() < 50 && doneCount() > 0) {
-      <div class="hint">
-        Ещё {{ needMore() }} упр. для завершения занятия
-      </div>
+      <div class="hint">Ещё {{ needMore() }} упр. для завершения занятия</div>
     }
   } @else {
     <div class="completed-bar">

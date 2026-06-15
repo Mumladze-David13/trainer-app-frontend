@@ -61,3 +61,27 @@ h2 { margin: 0; }
   .action-bar { flex-direction: column; }
   .action-bar button { width: 100%; }
 }
+
+/* Superset group */
+.superset-group {
+  border: 2px solid orange;
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+.superset-group-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 16px;
+  background: #fff3e0;
+  font-size: 13px; font-weight: 500; color: #e65100;
+}
+.ss-icon { font-size: 16px; width: 16px; height: 16px; }
+.ss-exercise-row { padding-left: 28px !important; }
+
+/* Per-set weight chips */
+.set-weight-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.weight-chip {
+  background: #1565c0; color: white;
+  font-size: 11px; padding: 2px 8px;
+  border-radius: 12px; white-space: nowrap;
+}

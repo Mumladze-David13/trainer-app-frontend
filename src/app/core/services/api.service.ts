@@ -79,12 +79,18 @@ export class SeasonApiService {
 export interface CreateWorkoutData {
   seasonId: string;
   notes?: string;
-  exercises: Array<{ exerciseId: string; sets: number; reps: number; weight?: number; order: number }>;
+  exercises: Array<{
+    exerciseId: string; sets: number; reps: number; weight?: number; order: number;
+    setWeights?: number[]; supersetGroup?: number; supersetOrder?: number;
+  }>;
 }
 
 export interface UpdateWorkoutData {
   notes?: string;
-  exercises?: Array<{ exerciseId: string; sets: number; reps: number; weight?: number; order: number }>;
+  exercises?: Array<{
+    exerciseId: string; sets: number; reps: number; weight?: number; order: number;
+    setWeights?: number[]; supersetGroup?: number; supersetOrder?: number;
+  }>;
 }
 
 @Injectable({ providedIn: 'root' })
