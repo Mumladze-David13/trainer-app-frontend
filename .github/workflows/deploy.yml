@@ -24,6 +24,7 @@ jobs:
             # Получить последние изменения
             git pull origin main
 
-            # Пересобрать и перезапустить контейнер (--no-cache гарантирует свежую сборку)
-            docker compose build --no-cache frontend
-            docker compose up -d frontend
+            # Пересобрать и перезапустить контейнер
+            # CACHEBUST = git commit hash, сбрасывает кеш COPY . . без перескачивания образов
+            docker compose build --build-arg CACHEBUST=$(git rev-parse HEAD) frontend
+            docker compose up -d --force-recreate frontend
